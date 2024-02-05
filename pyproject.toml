@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "classifiers"
+version = "0.1.0"
+description = "ML Classification Pipeline for DomainRadar"
+authors = [
+    "Radek Hranicky <hranicky@fit.vut.cz>",
+    "Jan Polisensky <xpolis04@stud.fit.vut.cz>",
+    "Petr Pouc <xpoucp01@fit.vut.cz>",
+]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+lightgbm = "^4.3.0"
+numpy = "^1.26.3"
+scipy = "^1.12.0"
+scikit-learn = "^1.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
