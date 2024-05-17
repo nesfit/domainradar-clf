@@ -74,9 +74,13 @@ class Preprocessor:
     def perform_eda(self, features: pd.DataFrame, classifier_type: str) -> None:
         categorical_features = ['geo_continent_hash', 'geo_countries_hash', 'rdap_registrar_name_hash', 'tls_root_authority_hash', 'tls_leaf_authority_hash']
 
-        # Use the loaded pipeline to predict the probability for the single record
-        probabilities_single_record = self.stored[classifier_type]["cf_model"].predict_proba(features[categorical_features])[:, 1]
-        features['dtree_prob'] = probabilities_single_record[0]  # Assuming single record, extract the first probability
+        ## Define a function to predict probability for a single row
+        def predict_row_probability(row):
+            row_df = row[categorical_features].to_frame().T  # Ensure the row is a DataFrame
+            return self.stored[classifier_type]["cf_model"].predict_proba(row_df)[0, 1]
+
+        # Apply the function to each row and create a new column 'dtree_prob'
+        features['dtree_prob'] = features.apply(predict_row_probability, axis=1)
 
         # Process timestamps
         for col in features.columns:
