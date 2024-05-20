@@ -72,7 +72,7 @@ class Preprocessor:
 
 
     def perform_eda(self, features: pd.DataFrame, classifier_type: str) -> None:
-        categorical_features = ['geo_continent_hash', 'geo_countries_hash', 'rdap_registrar_name_hash', 'tls_root_authority_hash', 'tls_leaf_authority_hash']
+        categorical_features = ['lex_tld_hash', 'geo_continent_hash', 'geo_countries_hash', 'rdap_registrar_name_hash', 'tls_root_authority_hash', 'tls_leaf_authority_hash']
 
         ## Define a function to predict probability for a single row
         def predict_row_probability(row):
