@@ -28,9 +28,9 @@ class Preprocessor:
         self.stored = {'dga': dict(), 'phishing': dict(), 'malware': dict()}
         self.stored["dga"]["scaler"] = joblib.load('boundaries/dga_scaler.joblib')
         self.stored["dga"]["outliers"] = joblib.load('boundaries/dga_outliers.joblib')
-        self.stored["phishing"]["scaler"] = joblib.load('boundaries/phishing_scaler.joblib')
-        self.stored["phishing"]["outliers"] = joblib.load('boundaries/phishing_outliers.joblib')
-        self.stored["phishing"]["cf_model"] = joblib.load('models/phishing_decision_tree_model.joblib')
+        self.stored["phishing"]["scaler"] = joblib.load('boundaries/scaler_benign2312misp2402.joblib')
+        self.stored["phishing"]["outliers"] = joblib.load('boundaries/outliers_benign2312misp2402.joblib')
+        self.stored["phishing"]["cf_model"] = joblib.load('models/decision_tree_benign2312phishing2402.joblib')
         self.stored["malware"]["scaler"] = joblib.load('boundaries/malware_scaler.joblib')
         self.stored["malware"]["outliers"] = joblib.load('boundaries/malware_outliers.joblib')
         self.stored["malware"]["cf_model"] = joblib.load('models/malware_decision_tree_model.joblib')
