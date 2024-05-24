@@ -53,6 +53,7 @@ math22 = "^2.2"
 python-math = "^0.0.1"
 logging4 = ">=0.0.2"
 joblib = "^1.3.2"
+dill = "^0.3.8"
 
 
 [build-system]
