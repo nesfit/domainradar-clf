@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 class Preprocessor:
     def __init__(self):
-        self.stored = {"dga": dict(), "phishing": dict(), "malware": dict()}
+        self.stored = {"dga_binary": dict(), "dga_multiclass": dict(), "phishing": dict(), "malware": dict()}
         self.stored["dga_binary"]["scaler"] = joblib.load("boundaries/dga_binary_scaler.joblib")
         self.stored["dga_binary"]["outliers"] = joblib.load("boundaries/dga_binary_outliers.joblib")
         self.stored["dga_multiclass"]["scaler"] = joblib.load("boundaries/dga_multiclass_scaler.joblib")
