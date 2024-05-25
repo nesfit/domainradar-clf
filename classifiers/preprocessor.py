@@ -91,15 +91,21 @@ class Preprocessor:
             "tls_leaf_authority_hash",
         ]
 
-        ## Define a function to predict probability for a single row
-        def predict_row_probability(row):
-            row_df = (
-                row[categorical_features].to_frame().T
-            )  # Ensure the row is a DataFrame
-            return self.stored[classifier_type]["cf_model"].predict_proba(row_df)[0, 1]
+        # For non-DGA classifiers, process categorical features with the stored decision tree
+        # The result stored as "dtree_prob" then serves as a feature
+        # Note: This is mostly used for NN classifiers, but has shown to be useful with
+        # tree-based models as well
+        if not classifier_type.startswith("dga"):
+        
+            ## Define a function to predict probability for a single row
+            def predict_row_probability(row):
+                row_df = (
+                    row[categorical_features].to_frame().T
+                )  # Ensure the row is a DataFrame
+                return self.stored[classifier_type]["cf_model"].predict_proba(row_df)[0, 1]
 
-        # Apply the function to each row and create a new column 'dtree_prob'
-        features["dtree_prob"] = features.apply(predict_row_probability, axis=1)
+            # Apply the function to each row and create a new column 'dtree_prob'
+            features["dtree_prob"] = features.apply(predict_row_probability, axis=1)
 
         # Process timestamps
         for col in features.columns:
@@ -113,6 +119,7 @@ class Preprocessor:
             if features[column].dtype == "bool":
                 features[column] = features[column].astype("float64")
 
+        # Drop the domain name column
         features = features.drop(features.columns[0], axis=1)
 
         # Handling missing values in features
