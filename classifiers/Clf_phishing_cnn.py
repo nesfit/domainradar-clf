@@ -82,9 +82,6 @@ class Clf_phishing_cnn:
             outputs = self.model(data_tensor_reshaped)
             probabilities = F.softmax(outputs, dim=1)
             probabilities_np = probabilities.detach().cpu().numpy()
-            probabilities_np_rounded = np.round(probabilities_np, decimals=3)
+            positive_class_probabilities = probabilities_np[:, 1]  # Extract the probability of class 1 (positive class)
 
-            _, predicted = torch.max(outputs, 1)
-            predicted_np = predicted.detach().cpu().numpy()
-
-        return predicted_np
+        return positive_class_probabilities

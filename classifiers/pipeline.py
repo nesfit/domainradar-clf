@@ -10,6 +10,8 @@ import lightgbm as lgb
 from preprocessor import Preprocessor
 
 from Clf_phishing_cnn import Clf_phishing_cnn
+from Clf_malware_cnn import Clf_malware_cnn
+from Clf_phishing_lgbm import Clf_phishing_lgbm
 
 class Pipeline:
     def __init__(self):
@@ -27,11 +29,11 @@ class Pipeline:
 
         # Load classifiers
         self.clf_phishing_cnn = Clf_phishing_cnn()
-    
-    
+        self.clf_phishing_lgbm = Clf_phishing_lgbm()
+        self.clf_malware_cnn = Clf_malware_cnn()
 
 
-    def classifyDomain(self, domain_name: str, feature_vector: dict) -> dict:
+    def classify_domain(self, domain_name: str, feature_vector: dict) -> dict:
         """
         Classifies the domain using the trained models and returns the results.
         """
@@ -89,9 +91,49 @@ class Pipeline:
             stats[f'{prefix}nonzero'] = domain_data[prefixed_columns].fillna(0).astype(bool).mean(axis=1)
         
         return stats
+    
+
+    def calculate_badness_probability(self, domain: pd.Series) -> float:
+        """
+        Calculates the badness probability based on the results of invividual classifiers
+        and statistical properties of the domain features.
+        """
+        
+        return (domain["phishing_cnn_result"] + domain["malware_cnn_result"]) / 2  # Just for testing
+    
+
+    def generate_result(self, stats: pd.Series) -> dict:
+        """
+        Generated the final classification result for a single domain name
+        """
+        result = {
+            "domain": stats["domain_name"],
+            "aggregate_probability": stats["badness_probability"],
+            "aggregate_description": "...",
+            "classification_results": [
+                {
+                    "classifier": "Phishing",
+                    "probability": stats["phishing_cnn_result"],
+                    "description": "aaa.",
+                    "details": {
+                        "CNN phishing classifier": stats["phishing_cnn_result"],
+                        "LightGBM phishing classifier": stats["phishing_lgbm_result"],
+                    }
+                },
+                {
+                    "classifier": "Malware",
+                    "probability": stats["malware_cnn_result"],
+                    "description": "aaa.",
+                    "details:": {
+                        "CNN malware classifier": stats["malware_cnn_result"]
+                    }
+                },
+            ]
+        }
+        return result
 
 
-    def classifyDomains(self, df: pd.DataFrame) -> list[dict]:
+    def classify_domains(self, df: pd.DataFrame) -> list[dict]:
         """
         Classifies the domains from a pandas df and returns list the results.
         Each row of the input DF is a single domain, represented by a column  domain_name
@@ -108,15 +150,17 @@ class Pipeline:
         ndf_malware = self.pp.NDF(df, "malware")
         ndf_dga_binary = self.pp.NDF(df, "dga_binary")
         ndf_dga_multiclass = self.pp.NDF(df, "dga_multiclass")
-
-        res = self.clf_phishing_cnn.classify(ndf_phishing)
-        
+    
+        # Get individual classifiers' results
         stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing)
-        stats["total_badness_ratio"] = self.get_total_badness_ratio(stats)
+        stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
+        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware)
 
-        stats = self.calculate_total_badness_ratio(stats)
+        # Calculate the overall badness probability
+        stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
 
-        results = self.generateResults(stats)
+        # Create an array of results
+        results = stats.apply(lambda domain_stats: self.generate_result(domain_stats), axis=1).tolist()
 
-        return [1,2,3]
-        # TODO
+        return results
+
