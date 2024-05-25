@@ -1,3 +1,19 @@
+"""
+Data preprocessor for classifiers
+
+This module contains the Preprocessor class, which is used to preprocess data
+for the classifier. Notably, it provides conversion into the NDF format.
+
+Transformations uses stored values of scalers, outliers, and decision trees
+that were obtained during the exploratory data analysis (EDA) on the training
+dataset. Therefore, this class is intended for use in the production environment
+where we classify new data using existing pre-trained models.
+
+IMPORTANT: DO NOT use this class for data processing when training new models!
+"""
+__author__ = "Petr Pouc (invention of NDF, original implementation)" \
+             "Radek Hranicky (lightweight reimplementation for production)"
+
 # Standard library imports
 import os
 import datetime
@@ -22,9 +38,16 @@ import torch
 warnings.filterwarnings("ignore", category=FutureWarning, module="pandas.api.types")
 warnings.filterwarnings("ignore", category=UserWarning)
 
-
 class Preprocessor:
+    """
+    Class for preprocessing data for the classifiers in a production environment.
+    Uses pre-computed boundary and scaler configuration.
+    """
+
     def __init__(self):
+        """
+        Initializes the preprocessor with the stored values of scalers, outliers, etc.
+        """
         self.stored = {"dga_binary": dict(), "dga_multiclass": dict(), "phishing": dict(), "malware": dict()}
         self.stored["dga_binary"]["scaler"] = joblib.load("boundaries/dga_binary_scaler.joblib")
         self.stored["dga_binary"]["outliers"] = joblib.load("boundaries/dga_binary_outliers.joblib")
@@ -38,6 +61,11 @@ class Preprocessor:
         self.stored["malware"]["cf_model"] = joblib.load("models/malware_ndf_cf_tree.joblib")
 
     def apply_scaling(self, df: pd.DataFrame, classifier_type: str):
+        """
+        Applies scaling to the input DataFrame based on the stored MinMaxScaler.
+        The result is then processed using the sigmoid transformation to fit
+        into the range between 0 and 1.
+        """
         numeric_df = df.select_dtypes(include=[np.number])
 
         # Get the columns that were used during fitting
@@ -65,6 +93,9 @@ class Preprocessor:
         return scaled_df
 
     def adjust_outliers(self, features, classifier_type: str):
+        """
+        Adjusts the outliers in the features based on the stored boundaries.
+        """
         # Apply boundaries
         for column, (lower_bound, upper_bound) in self.stored[classifier_type][
             "outliers"
@@ -82,6 +113,11 @@ class Preprocessor:
         return features
 
     def perform_eda(self, features: pd.DataFrame, classifier_type: str) -> None:
+        """
+        Provides feature transformations like scaling, encoding, outlier handling,
+        and categorical feature processing using store values obtained
+        by exploratory data analysis (EDA) on the training dataset.
+        """
         categorical_features = [
             "lex_tld_hash",
             "geo_continent_hash",
@@ -135,6 +171,13 @@ class Preprocessor:
         return torch.tensor(features.values).float(), feature_names
 
     def NDF(self, input_data: pd.DataFrame, classifier_type: str):
+        """
+        Preprocesses the input data into the NDF format for the classifier.
+        This method of NDF creation is intended for the classification
+        in the production environment. DO NOT use it for training new models!
+        The method expects scalers, outliers, and decision tree for processing
+        categorical features to be stored in appropriate paths.
+        """
         features, feature_names = self.perform_eda(input_data, classifier_type)
 
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")

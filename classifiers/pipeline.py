@@ -1,8 +1,15 @@
 import os
-import pickle 
+import joblib
+import math
 import pandas as pd
+import numpy as np
+import torch
+import torch.nn.functional as F
 
 import lightgbm as lgb
+from preprocessor import Preprocessor
+
+from Clf_phishing_cnn import Clf_phishing_cnn
 
 class Pipeline:
     def __init__(self):
@@ -12,19 +19,16 @@ class Pipeline:
 
         # Initialize paths
         self.module_dir = os.path.dirname(__file__)
-        self.model_path = os.path.join(self.module_dir, "models")
-
-        # Load ML models
-        self.pishing_model = self.phishing_model = self.loadModel("phishing-lgbm.pkl")
+        #self.model_path = os.path.join(self.module_dir, "models")
 
 
-    def loadModel(self, model_name: str) -> object:
-        """
-        Loads the model from the model directory.
-        """
-        model_path = os.path.join(self.model_path, model_name)
-        model = pickle.load(open(model_path, "rb"))
-        return model
+        # Initialize preprocessor
+        self.pp = Preprocessor()
+
+        # Load classifiers
+        self.clf_phishing_cnn = Clf_phishing_cnn()
+    
+    
 
 
     def classifyDomain(self, domain_name: str, feature_vector: dict) -> dict:
@@ -66,11 +70,12 @@ class Pipeline:
         Calculates feature statistics for the domain data
         """
         # Define the prefixes
-        prefixes = ['lex_', 'dns_', 'tls_', 'ip_', 'rdap_', 'geo_']
+        prefixes = ['dns_', 'tls_', 'ip_', 'rdap_', 'geo_'] # lex_ is always present
 
         # Initialize a DataFrame with domain names only
+        
         stats = domain_data[['domain_name']].copy()
-        stats.set_index('domain_name', inplace=True)
+        #stats.set_index('domain_name', inplace=True)
 
         # Iterate through each prefix to calculate the required ratios
         for prefix in prefixes:
@@ -93,14 +98,25 @@ class Pipeline:
         and 
         """
         # The domain name should be the index
-        df.set_index('domain_name', inplace=True)
+        #df.set_index('domain_name', inplace=True)
         
         # Calculate the feature statistics
-        stats = self.calculate_availability(df)
+        stats = self.feature_statistics(df)
         
         # Get NDF representation of the data for each classifier
         ndf_phishing = self.pp.NDF(df, "phishing")
         ndf_malware = self.pp.NDF(df, "malware")
-        ndf_dga = self.pp.NDF(df, "dga")
+        ndf_dga_binary = self.pp.NDF(df, "dga_binary")
+        ndf_dga_multiclass = self.pp.NDF(df, "dga_multiclass")
 
+        res = self.clf_phishing_cnn.classify(ndf_phishing)
+        
+        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing)
+        stats["total_badness_ratio"] = self.get_total_badness_ratio(stats)
+
+        stats = self.calculate_total_badness_ratio(stats)
+
+        results = self.generateResults(stats)
+
+        return [1,2,3]
         # TODO
