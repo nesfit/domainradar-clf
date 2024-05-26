@@ -71,26 +71,41 @@ class Preprocessor:
         # Get the columns that were used during fitting
         fitted_columns = self.stored[classifier_type]["scaler"].feature_names_in_
 
-        # Ensure all fitted columns are present in the numeric_df, filling missing columns with zeros
-        for col in fitted_columns:
-            if col not in numeric_df.columns:
-                numeric_df[col] = 0
+        # From them, get those that exist in the current DataFrame
+        existing_fitted_columns = [col for col in fitted_columns if col in numeric_df.columns]
 
-        # Transform only the fitted columns (now all columns should be present)
-        scaled_data = self.stored[classifier_type]["scaler"].transform(
-            numeric_df[fitted_columns]
-        )
+        if not existing_fitted_columns:
+            raise ValueError("None of the fitted columns are present in the input DataFrame.")
+
+        if len(fitted_columns) != len(numeric_df.columns):
+            # Create a DataFrame with zeroes for missing columns (required for proper transformation shape)
+            temp_df = pd.DataFrame(0, index=numeric_df.index, columns=fitted_columns, dtype=float)
+            # Ensure that the types match by casting numeric_df to float before updating temp_df
+            temp_df.update(numeric_df.astype(float))
+            
+            # Transform only the fitted columns
+            scaled_data = self.stored[classifier_type]["scaler"].transform(temp_df[fitted_columns])
+            columns_to_use = fitted_columns
+        else:
+            # Transform the existing fitted columns directly
+            scaled_data = self.stored[classifier_type]["scaler"].transform(numeric_df[existing_fitted_columns])
+            columns_to_use = existing_fitted_columns
+
         scaled_data = 1 / (1 + np.exp(-scaled_data))  # Apply sigmoid scaling
 
         # Create a DataFrame with the scaled data
-        scaled_df = pd.DataFrame(scaled_data, columns=fitted_columns, index=df.index)
+        scaled_df = pd.DataFrame(scaled_data, columns=columns_to_use, index=df.index)
+
+        # Filter the scaled_df to keep only the columns that were present in the input DataFrame
+        final_scaled_df = scaled_df[existing_fitted_columns]
 
         # Add back any non-numeric columns to the DataFrame
         for col in df.columns:
             if col not in numeric_df.columns:
-                scaled_df[col] = df[col]
+                final_scaled_df[col] = df[col]
 
-        return scaled_df
+        return final_scaled_df
+
 
     def adjust_outliers(self, features, classifier_type: str):
         """
@@ -112,12 +127,13 @@ class Preprocessor:
                 )
         return features
 
-    def perform_eda(self, features: pd.DataFrame, classifier_type: str) -> None:
+    def apply_eda(self, features: pd.DataFrame, classifier_type: str, drop_categorical=True) -> None:
         """
-        Provides feature transformations like scaling, encoding, outlier handling,
+        Applies feature transformations like scaling, encoding, outlier handling,
         and categorical feature processing using store values obtained
         by exploratory data analysis (EDA) on the training dataset.
         """
+
         categorical_features = [
             "lex_tld_hash",
             "geo_continent_hash",
@@ -127,12 +143,20 @@ class Preprocessor:
             "tls_leaf_authority_hash",
         ]
 
-        # For non-DGA classifiers, process categorical features with the stored decision tree
-        # The result stored as "dtree_prob" then serves as a feature
-        # Note: This is mostly used for NN classifiers, but has shown to be useful with
-        # tree-based models as well
-        if not classifier_type.startswith("dga"):
-        
+        if classifier_type.startswith("dga"):
+            # For DGA classifiers, preserve only features that start with lex_ (and the domain name)
+
+            columns_to_keep = [col for col in features.columns if col.startswith("lex_")]
+
+            # Keep only the specified columns
+            features = features[columns_to_keep]
+
+        else:
+            # For non-DGA classifiers, process categorical features with the stored decision tree
+            # The result stored as "dtree_prob" then serves as a feature
+            # Note: This is mostly used for NN classifiers, but has shown to be useful with
+            # tree-based models as well
+
             ## Define a function to predict probability for a single row
             def predict_row_probability(row):
                 row_df = (
@@ -142,6 +166,18 @@ class Preprocessor:
 
             # Apply the function to each row and create a new column 'dtree_prob'
             features["dtree_prob"] = features.apply(predict_row_probability, axis=1)
+
+            if drop_categorical: # By default True
+                # Drop the categorical features
+                features.drop(columns=categorical_features, errors='ignore', inplace=True)
+
+        # Drop the domain name column (if present)
+        if 'domain_name' in features.columns:
+            features = features.drop(columns=['domain_name'])
+
+        # Drop the label column (if present)
+        if 'label' in features.columns:
+            features = features.drop(columns=['label'])
 
         # Process timestamps
         for col in features.columns:
@@ -155,9 +191,6 @@ class Preprocessor:
             if features[column].dtype == "bool":
                 features[column] = features[column].astype("float64")
 
-        # Drop the domain name column
-        features = features.drop(features.columns[0], axis=1)
-
         # Handling missing values in features
         features.fillna(-1, inplace=True)
 
@@ -168,9 +201,10 @@ class Preprocessor:
         features = self.apply_scaling(features, classifier_type)
 
         feature_names = features.columns
+
         return torch.tensor(features.values).float(), feature_names
 
-    def NDF(self, input_data: pd.DataFrame, classifier_type: str):
+    def df_to_NDF(self, input_data: pd.DataFrame, classifier_type: str, drop_categorical=True):
         """
         Preprocesses the input data into the NDF format for the classifier.
         This method of NDF creation is intended for the classification
@@ -178,7 +212,10 @@ class Preprocessor:
         The method expects scalers, outliers, and decision tree for processing
         categorical features to be stored in appropriate paths.
         """
-        features, feature_names = self.perform_eda(input_data, classifier_type)
+
+        domain_data = input_data.copy()
+
+        features, feature_names = self.apply_eda(domain_data, classifier_type, drop_categorical=drop_categorical)
 
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
         dataset_name = f"dataset_{current_date}"

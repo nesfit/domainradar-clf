@@ -40,7 +40,7 @@ class Clf_phishing_cnn:
         self.padding = self.desired_size - self.feature_size
 
         # Load and evaluate the model
-        self.state_dict = torch.load('models/phishing_cnn_model_state_dict.pth')
+        self.state_dict = torch.load('models/phishing_cnn_model_state_dict.pth', map_location=self.device)
         self.model = Phishing_CNN_Net(self.side_size).to(self.device)
         self.model.load_state_dict(self.state_dict)
         self.model.eval()

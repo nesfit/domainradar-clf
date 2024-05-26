@@ -9,9 +9,14 @@ import torch.nn.functional as F
 import lightgbm as lgb
 from preprocessor import Preprocessor
 
+import pyarrow.parquet as pq
+import pyarrow as pa
+
 from Clf_phishing_cnn import Clf_phishing_cnn
 from Clf_malware_cnn import Clf_malware_cnn
 from Clf_phishing_lgbm import Clf_phishing_lgbm
+from Clf_malware_xgboost import Clf_malware_xgboost
+from Clf_dga_binary_nn import Clf_dga_binary_nn
 
 class Pipeline:
     def __init__(self):
@@ -31,7 +36,8 @@ class Pipeline:
         self.clf_phishing_cnn = Clf_phishing_cnn()
         self.clf_phishing_lgbm = Clf_phishing_lgbm()
         self.clf_malware_cnn = Clf_malware_cnn()
-
+        self.clf_malware_xgboost = Clf_malware_xgboost()
+        self.clf_dga_binary_nn = Clf_dga_binary_nn()
 
     def classify_domain(self, domain_name: str, feature_vector: dict) -> dict:
         """
@@ -133,6 +139,56 @@ class Pipeline:
         return result
 
 
+
+    def generate_preliminary_results(self, df: pd.DataFrame, output_file: str = None) -> pd.DataFrame:
+        """
+        This method is used to generate preliminary results for training and testing
+        the final aggregation model. The parquet contains domain name, label, feature
+        statistics and results of individual classifiers.
+        Optinally, the results can be saved to a Parquet file.
+        """
+
+        # Calculate the feature statistics
+        stats = self.feature_statistics(df)
+
+        # Add the label to the statistics (if present in the input DataFrame)
+        if "label" in df.columns:
+            stats["label"] = df["label"]
+        
+        # Get NDF representation of the data for each classifier
+        ndf_phishing = self.pp.df_to_NDF(df, "phishing")
+        oldndf_phishing = self.pp.df_to_NDF(df, "phishing", drop_categorical=False)
+        
+        ndf_malware = self.pp.df_to_NDF(df, "malware")
+        oldndf_malware = self.pp.df_to_NDF(df, "malware", drop_categorical=False)
+        
+        ndf_dga_binary = self.pp.df_to_NDF(df, "dga_binary")
+        ndf_dga_multiclass = self.pp.df_to_NDF(df, "dga_multiclass")
+    
+        # Get individual classifiers' results
+        # Phishing
+        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
+        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
+        #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
+        stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
+
+        # Malware
+        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
+        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
+        #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
+        stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
+
+        # DGA
+        stats["dga_binary_nn_result"] = self.clf_dga_binary_nn.classify(df)
+
+        # If an output file path is provided, save the DataFrame as a Parquet file
+        if output_file:
+            table = pa.Table.from_pandas(stats)
+            pq.write_table(table, output_file)
+   
+        return stats
+
+
     def classify_domains(self, df: pd.DataFrame) -> list[dict]:
         """
         Classifies the domains from a pandas df and returns list the results.
@@ -146,18 +202,37 @@ class Pipeline:
         stats = self.feature_statistics(df)
         
         # Get NDF representation of the data for each classifier
-        ndf_phishing = self.pp.NDF(df, "phishing")
-        ndf_malware = self.pp.NDF(df, "malware")
-        ndf_dga_binary = self.pp.NDF(df, "dga_binary")
-        ndf_dga_multiclass = self.pp.NDF(df, "dga_multiclass")
+        ndf_phishing = self.pp.df_to_NDF(df, "phishing")
+        oldndf_phishing = self.pp.df_to_NDF(df, "phishing", drop_categorical=False)
+        
+        ndf_malware = self.pp.df_to_NDF(df, "malware")
+        oldndf_malware = self.pp.df_to_NDF(df, "malware", drop_categorical=False)
+        
+        ndf_dga_binary = self.pp.df_to_NDF(df, "dga_binary")
+        ndf_dga_multiclass = self.pp.df_to_NDF(df, "dga_multiclass")
     
         # Get individual classifiers' results
-        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing)
-        stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
-        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware)
+        # Phishing
+        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
+        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
+        #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
+        stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
+
+        # Malware
+        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
+        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
+        #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
+        stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
+
+        # DGA
+        stats["dga_binary_nn_result"] = self.clf_dga_binary_nn.classify(df)
 
         # Calculate the overall badness probability
         stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
+
+        print("=====================================")
+        print(stats)
+        print("=====================================")
 
         # Create an array of results
         results = stats.apply(lambda domain_stats: self.generate_result(domain_stats), axis=1).tolist()
