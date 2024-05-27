@@ -157,29 +157,40 @@ class Pipeline:
         
         # Get NDF representation of the data for each classifier
         ndf_phishing = self.pp.df_to_NDF(df, "phishing")
-        oldndf_phishing = self.pp.df_to_NDF(df, "phishing", drop_categorical=False)
+        #oldndf_phishing = self.pp.df_to_NDF(df, "phishing", drop_categorical=False)
         
         ndf_malware = self.pp.df_to_NDF(df, "malware")
-        oldndf_malware = self.pp.df_to_NDF(df, "malware", drop_categorical=False)
+        #oldndf_malware = self.pp.df_to_NDF(df, "malware", drop_categorical=False)
         
         ndf_dga_binary = self.pp.df_to_NDF(df, "dga_binary")
         ndf_dga_multiclass = self.pp.df_to_NDF(df, "dga_multiclass")
     
         # Get individual classifiers' results
         # Phishing
-        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
-        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
+        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing)
         #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
         stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
 
         # Malware
-        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
-        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
+        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware)
         #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
 
         # DGA
         stats["dga_binary_nn_result"] = self.clf_dga_binary_nn.classify(df)
+
+        # Calculate derived statistics (additional inputs for the decision making model)
+        no_phishing_classifiers = 2
+        no_malware_classifiers = 2
+        stats["phishing_sum"] = stats["phishing_cnn_result"] + stats["phishing_lgbm_result"]
+        stats["phishing_avg"] = stats["phishing_sum"] / no_phishing_classifiers
+        stats["phishing_prod"] = stats["phishing_cnn_result"] * stats["phishing_lgbm_result"]
+        stats["malware_sum"] = stats["malware_cnn_result"] + stats["malware_xgboost_result"]
+        stats["malware_avg"] = stats["malware_sum"] / no_malware_classifiers
+        stats["malware_prod"] = stats["malware_cnn_result"] * stats["malware_xgboost_result"]
+        stats["total_sum"] = stats["phishing_sum"] + stats["malware_sum"] + stats["dga_binary_nn_result"]
+        stats["total_avg"] = stats["total_sum"] / (no_phishing_classifiers + no_malware_classifiers + 1)
+        stats["total_prod"] = stats["phishing_prod"] * stats["malware_prod"] * stats["dga_binary_nn_result"]
 
         # If an output file path is provided, save the DataFrame as a Parquet file
         if output_file:
@@ -214,18 +225,30 @@ class Pipeline:
         # Get individual classifiers' results
         # Phishing
         stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
-        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
         #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
         stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
 
         # Malware
         stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
-        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
         #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
 
         # DGA
         stats["dga_binary_nn_result"] = self.clf_dga_binary_nn.classify(df)
+
+        # Calculate derived statistics (additional inputs for the decision making model)
+        no_phishing_classifiers = 2
+        no_malware_classifiers = 2
+        stats["phishing_sum"] = stats["phishing_cnn_result"] + stats["phishing_lgbm_result"]
+        stats["phishing_avg"] = stats["phishing_sum"] / no_phishing_classifiers
+        stats["phishing_prod"] = stats["phishing_cnn_result"] * stats["phishing_lgbm_result"]
+        stats["malware_sum"] = stats["malware_cnn_result"] + stats["malware_xgboost_result"]
+        stats["malware_avg"] = stats["malware_sum"] / no_malware_classifiers
+        stats["malware_prod"] = stats["malware_cnn_result"] * stats["malware_xgboost_result"]
+        stats["total_sum"] = stats["phishing_sum"] + stats["malware_sum"] + stats["dga_binary_nn_result"]
+        stats["total_avg"] = stats["total_sum"] / (no_phishing_classifiers + no_malware_classifiers + 1)
+        stats["total_prod"] = stats["phishing_prod"] * stats["malware_prod"] * stats["dga_binary_nn_result"]
+
 
         # Calculate the overall badness probability
         stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
