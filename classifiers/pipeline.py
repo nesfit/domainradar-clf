@@ -5,18 +5,20 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn.functional as F
+import warnings
 
 import lightgbm as lgb
-from preprocessor import Preprocessor
+from .preprocessor import Preprocessor
 
 import pyarrow.parquet as pq
 import pyarrow as pa
 
-from Clf_phishing_cnn import Clf_phishing_cnn
-from Clf_malware_cnn import Clf_malware_cnn
-from Clf_phishing_lgbm import Clf_phishing_lgbm
-from Clf_malware_xgboost import Clf_malware_xgboost
-from Clf_dga_binary_nn import Clf_dga_binary_nn
+from .Clf_phishing_cnn import Clf_phishing_cnn
+from .Clf_malware_cnn import Clf_malware_cnn
+from .Clf_phishing_lgbm import Clf_phishing_lgbm
+from .Clf_malware_xgboost import Clf_malware_xgboost
+from .Clf_dga_binary_nn import Clf_dga_binary_nn
+from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
 
 class Pipeline:
     def __init__(self):
@@ -38,40 +40,11 @@ class Pipeline:
         self.clf_malware_cnn = Clf_malware_cnn()
         self.clf_malware_xgboost = Clf_malware_xgboost()
         self.clf_dga_binary_nn = Clf_dga_binary_nn()
+        self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm()
 
-    def classify_domain(self, domain_name: str, feature_vector: dict) -> dict:
-        """
-        Classifies the domain using the trained models and returns the results.
-        """
-        result = {
-            "domain": domain_name,    
-            "aggregate_probability": 0.7898383552053838,
-            "aggregate_description": "...",
-            "classification_results": [
-                {
-                    "classifier": "Phishing",
-                    "probability": 0.05633430716219098,
-                    "description": "No phishing detected."
-                },
-                {
-                    "classifier": "Malware",
-                    "probability": 0.004824631535984588,
-                    "description": "No malware detected."
-                },
-                {
-                    "classifier": "DGA",
-                    "probability": 0.8888312407957214,
-                    "description": "The domain has high level of DGA incidators.",
-                    "details": {
-                        "dga:fit": "80.00%",
-                        "dga:vut": "20.00%"
-                    }
-                }
-            ]
-        }
+        # Suppress FutureWarning
+        warnings.simplefilter(action='ignore', category=FutureWarning)
 
-        return result
-    
 
     def feature_statistics(self, domain_data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -105,13 +78,58 @@ class Pipeline:
         and statistical properties of the domain features.
         """
         
-        return (domain["phishing_cnn_result"] + domain["malware_cnn_result"]) / 2  # Just for testing
+        return domain["total_avg"]  # Just for testing
     
 
     def generate_result(self, stats: pd.Series) -> dict:
         """
         Generated the final classification result for a single domain name
         """
+
+        # Phishing description
+        phishing_desc = ""
+        if stats["phishing_avg"] < 0.1:
+            phishing_desc = "No phishing detected."
+        elif stats["phishing_avg"] >= 0.1 and stats["phishing_avg"] < 0.5:
+            phishing_desc = "The domain has some similarities to phishing domains."
+        elif stats["phishing_avg"] >= 0.5 and stats["phishing_avg"] < 0.9:
+            phishing_desc = "The domain has high level of phishing indicators."
+        elif stats["phishing_avg"] >= 0.9:
+            phishing_desc = "The domain is most certainly a phishing domain."
+
+        # Malware description
+        malware_desc = ""
+        if stats["malware_avg"] < 0.1:
+            malware_desc = "No malware detected."
+        elif stats["malware_avg"] >= 0.1 and stats["malware_avg"] < 0.5:
+            malware_desc = "The domain has some similarities to malware domains."
+        elif stats["malware_avg"] >= 0.5 and stats["malware_avg"] < 0.9:
+            malware_desc = "The domain has high level of malware indicators."
+        elif stats["malware_avg"] >= 0.9:
+            malware_desc = "The domain is most certainly a malware domain."
+
+        # DGA description
+        dga_desc = ""
+        if stats["dga_binary_nn_result"] < 0.1:
+            dga_desc = "No DGA detected."
+        elif stats["dga_binary_nn_result"] >= 0.1 and stats["dga_binary_nn_result"] < 0.5:
+            dga_desc = "The domain has some similarities to DGA domains."
+        elif stats["dga_binary_nn_result"] >= 0.5 and stats["dga_binary_nn_result"] < 0.9:
+            dga_desc = "The domain has high level of DGA incidators."
+        elif stats["dga_binary_nn_result"] >= 0.9:
+            dga_desc = "The domain is most certainly a DGA domain."
+
+        dga_family_details = dict()
+
+        if stats["dga_binary_nn_result"] >= 0.5:
+            for family_name, family_prob in stats["dga_families"].items():
+                dga_family_details[family_name] = str(round(family_prob * 100, 2)) + "%"
+
+            #print("+ --------------------------------- +")
+            #print(stats["domain_name"])
+            #print(dga_family_details)
+            #print("+ --------------------------------- +")
+
         result = {
             "domain": stats["domain_name"],
             "aggregate_probability": stats["badness_probability"],
@@ -119,25 +137,31 @@ class Pipeline:
             "classification_results": [
                 {
                     "classifier": "Phishing",
-                    "probability": stats["phishing_cnn_result"],
-                    "description": "aaa.",
+                    "probability": stats["phishing_avg"],
+                    "description": phishing_desc,
                     "details": {
-                        "CNN phishing classifier": stats["phishing_cnn_result"],
-                        "LightGBM phishing classifier": stats["phishing_lgbm_result"],
+                        "CNN phishing classifier": str(round(stats["phishing_cnn_result"] * 100, 2)) + "%",
+                        "LightGBM phishing classifier": str(round(stats["phishing_lgbm_result"] * 100, 2)) + "%",
                     }
                 },
                 {
                     "classifier": "Malware",
-                    "probability": stats["malware_cnn_result"],
-                    "description": "aaa.",
+                    "probability": stats["malware_avg"],
+                    "description": malware_desc,
                     "details:": {
-                        "CNN malware classifier": stats["malware_cnn_result"]
+                        "CNN malware classifier": str(round(stats["malware_cnn_result"] * 100, 2)) + "%",
+                        "XGBoost malware classifier": str(round(stats["malware_xgboost_result"] * 100, 2)) + "%",
                     }
                 },
+                {
+                    "classifier": "DGA",
+                    "probability": stats["dga_binary_nn_result"],
+                    "description": dga_desc,
+                    "details:": dga_family_details
+                }
             ]
         }
         return result
-
 
 
     def generate_preliminary_results(self, df: pd.DataFrame, output_file: str = None) -> pd.DataFrame:
@@ -167,17 +191,18 @@ class Pipeline:
     
         # Get individual classifiers' results
         # Phishing
-        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing)
+        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
         #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
         stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
 
         # Malware
-        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware)
+        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
         #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
 
         # DGA
         stats["dga_binary_nn_result"] = self.clf_dga_binary_nn.classify(df)
+        #dga_families = self.clf_dga_multiclass_lgbm.classify(df) # not needed for training decision-maker
 
         # Calculate derived statistics (additional inputs for the decision making model)
         no_phishing_classifiers = 2
@@ -233,7 +258,7 @@ class Pipeline:
         #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
 
-        # DGA
+        # DGA binary
         stats["dga_binary_nn_result"] = self.clf_dga_binary_nn.classify(df)
 
         # Calculate derived statistics (additional inputs for the decision making model)
@@ -249,13 +274,15 @@ class Pipeline:
         stats["total_avg"] = stats["total_sum"] / (no_phishing_classifiers + no_malware_classifiers + 1)
         stats["total_prod"] = stats["phishing_prod"] * stats["malware_prod"] * stats["dga_binary_nn_result"]
 
-
         # Calculate the overall badness probability
         stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
 
-        print("=====================================")
-        print(stats)
-        print("=====================================")
+        # DGA Families
+        stats["dga_families"] = self.clf_dga_multiclass_lgbm.classify(df)
+
+        #print("=====================================")
+        #print(stats)
+        #print("=====================================")
 
         # Create an array of results
         results = stats.apply(lambda domain_stats: self.generate_result(domain_stats), axis=1).tolist()

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 class Net(nn.Module):
     def __init__(self, side_size):
         super(Net, self).__init__()
@@ -20,8 +21,6 @@ class Net(nn.Module):
         # Optionally use dropout
         self.dropout1 = nn.Dropout(0.1)
         self.dropout2 = nn.Dropout(0.1)
-
-        print("CNN model created")
 
     def forward(self, x):
         x = F.relu(self.bn1(self.conv1(x)))

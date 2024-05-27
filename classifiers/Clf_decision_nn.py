@@ -1,5 +1,6 @@
 """
-Binary DGA/non-DGA classifier using a deep neural network.
+NN-based decision making classifier to predict the overall badness
+of the domain name.
 """
 __author__ = "Radek Hranicky"
 
@@ -15,7 +16,7 @@ from pandas.core.dtypes import common as com
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-# Force TensorFlow to use CPU
+ Force TensorFlow to use CPU
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress most TensorFlow logs
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -37,13 +38,14 @@ class Clf_dga_binary_nn:
         self.base_dir = os.path.dirname(__file__)
 
         # Load the LightGBM model
-        self.model = load_model(os.path.join(self.base_dir, 'models/dga_binary_nn_model.keras'))
+        self.model = load_model(os.path.join(self.base_dir, 'models/decision_nn_model.keras'))
 
         # Load the scaler
-        self.scaler = joblib.load(os.path.join(self.base_dir, 'boundaries/dga_binary_nn_scaler.save'))
+        self.scaler = joblib.load(os.path.join(self.base_dir, 'boundaries/decision_nn_scaler.save'))
 
         # Get the number of features expected by the model
         #self.expected_feature_size = self.model.n_features_
+        self.expected_feature_size = 24
 
     
     def cast_timestamp(self, df: DataFrame):
@@ -61,9 +63,16 @@ class Clf_dga_binary_nn:
 
     def classify(self, input_data: DataFrame) -> list:
         # Load the trained model
-        
-        # Preserve only lex_ columns
-        input_data = input_data.filter(regex='^lex_')
+
+        # Drop the domain_name and label columns if exists
+        if "domain_name" in input_data.columns:
+            input_data.drop(columns=["domain_name"], inplace=True)
+        if "label" in input_data.columns:
+            input_data.drop(columns=["label"], inplace=True)
+
+        # Check whether the number of features is correct
+        if input_data.shape[1] != self.expected_feature_size:
+            raise ValueError(f"The input data has {input_data.shape[1]} features, but the model expects {self.expected_feature_size} features.")
 
         # Cast timestamps
         input_data = self.cast_timestamp(input_data)
