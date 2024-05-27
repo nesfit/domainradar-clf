@@ -10,14 +10,27 @@ Then type:
 
 In your code, you can use the module like:
 ```
+import pandas as pd
 from classifiers import pipeline
 
+# Initialize the classification pipeline
 p = Pipeline()
-result = p.classifyDomain('mydomain.com', {'dns_A_count': 2, 'geo_mean_lat': 35.6980, ...})
-print(result)
+
+# Load or prepare a dataframe with feature vectors
+df = pd.DataFrame({
+    "domain_name": ['first.com', 'second.net', ...],
+    "lex_name_len": [9, 10, ...],
+    ...
+})
+
+# Classify!
+results = p.classify_domains(df)
+print(results)
 ```
 
-Don't forget to run you code from `poetry shell`.
+See `example.py` for a working example.
+
+**NOTE: Don't forget** to run you code from `poetry shell`.
 
 ## Development
 
