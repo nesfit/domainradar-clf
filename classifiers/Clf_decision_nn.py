@@ -16,13 +16,13 @@ from pandas.core.dtypes import common as com
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
- Force TensorFlow to use CPU
+# Force TensorFlow to use CPU
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress most TensorFlow logs
 #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 tf.config.set_visible_devices([], 'GPU')
 
-class Clf_dga_binary_nn:
+class Clf_decision_nn:
     """
         Class for the LightGBM phishing classifier.
         Expects the model loaded in the ./models/ directory.
@@ -41,7 +41,7 @@ class Clf_dga_binary_nn:
         self.model = load_model(os.path.join(self.base_dir, 'models/decision_nn_model.keras'))
 
         # Load the scaler
-        self.scaler = joblib.load(os.path.join(self.base_dir, 'boundaries/decision_nn_scaler.save'))
+        self.scaler = joblib.load(os.path.join(self.base_dir, 'boundaries/decision_nn_scaler.joblib'))
 
         # Get the number of features expected by the model
         #self.expected_feature_size = self.model.n_features_

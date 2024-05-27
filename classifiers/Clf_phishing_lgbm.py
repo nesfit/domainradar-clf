@@ -28,7 +28,6 @@ class Clf_phishing_lgbm:
         base_dir = os.path.dirname(__file__)
 
         # Load the LightGBM model
-        #self.model = joblib.load('models/phishing_lgbm_model.joblib')
         self.model = joblib.load(os.path.join(base_dir, 'models/phishing_lgbm_model_nonndf.joblib'))
 
         # Get the number of features expected by the model

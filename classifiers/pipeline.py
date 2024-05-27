@@ -19,6 +19,7 @@ from .Clf_phishing_lgbm import Clf_phishing_lgbm
 from .Clf_malware_xgboost import Clf_malware_xgboost
 from .Clf_dga_binary_nn import Clf_dga_binary_nn
 from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
+from .Clf_decision_nn import Clf_decision_nn
 
 class Pipeline:
     def __init__(self):
@@ -41,6 +42,7 @@ class Pipeline:
         self.clf_malware_xgboost = Clf_malware_xgboost()
         self.clf_dga_binary_nn = Clf_dga_binary_nn()
         self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm()
+        self.clf_decision_nn = Clf_decision_nn()
 
         # Suppress FutureWarning
         warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -72,13 +74,15 @@ class Pipeline:
         return stats
     
 
-    def calculate_badness_probability(self, domain: pd.Series) -> float:
+    def calculate_badness_probability(self, domain_stats: pd.Series) -> float:
         """
         Calculates the badness probability based on the results of invividual classifiers
         and statistical properties of the domain features.
         """
         
-        return domain["total_avg"]  # Just for testing
+        return self.clf_decision_nn.classify(pd.DataFrame([domain_stats]))[0]
+
+        #return domain_stats["total_avg"]  # Just for testing
     
 
     def generate_result(self, stats: pd.Series) -> dict:
@@ -164,7 +168,7 @@ class Pipeline:
         return result
 
 
-    def generate_preliminary_results(self, df: pd.DataFrame, output_file: str = None) -> pd.DataFrame:
+    def generate_preliminary_results(self, df: pd.DataFrame, output_file: str = None, add_final=False) -> pd.DataFrame:
         """
         This method is used to generate preliminary results for training and testing
         the final aggregation model. The parquet contains domain name, label, feature
@@ -216,6 +220,10 @@ class Pipeline:
         stats["total_sum"] = stats["phishing_sum"] + stats["malware_sum"] + stats["dga_binary_nn_result"]
         stats["total_avg"] = stats["total_sum"] / (no_phishing_classifiers + no_malware_classifiers + 1)
         stats["total_prod"] = stats["phishing_prod"] * stats["malware_prod"] * stats["dga_binary_nn_result"]
+
+        if add_final:
+            # Calculate the overall badness probability
+            stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
 
         # If an output file path is provided, save the DataFrame as a Parquet file
         if output_file:
