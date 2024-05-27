@@ -167,14 +167,14 @@ class Pipeline:
     
         # Get individual classifiers' results
         # Phishing
-        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
-        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
+        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
+        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
         #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
         stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
 
         # Malware
-        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
-        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
+        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
+        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
         #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
 
@@ -213,14 +213,14 @@ class Pipeline:
     
         # Get individual classifiers' results
         # Phishing
-        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
-        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
+        stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
+        #stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_phishing).astype(float)
         #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
         stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
 
         # Malware
-        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
-        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
+        stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
+        #stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(oldndf_malware).astype(float)
         #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
 
