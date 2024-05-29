@@ -1,11 +1,9 @@
+import importlib.util
 import os
 import pandas as pd
 import warnings
 
 from .preprocessor import Preprocessor
-
-import pyarrow.parquet as pq
-import pyarrow as pa
 
 from .Clf_phishing_cnn import Clf_phishing_cnn
 from .Clf_malware_cnn import Clf_malware_cnn
@@ -163,7 +161,8 @@ class Pipeline:
         This method is used to generate preliminary results for training and testing
         the final aggregation model. The parquet contains domain name, label, feature
         statistics and results of individual classifiers.
-        Optinally, the results can be saved to a Parquet file.
+        Optionally, the results can be saved to a Parquet file. To use this feature, the "arrow" or "dev"
+        optional dependency group must be installed (poetry install --with arrow).
         """
 
         # Calculate the feature statistics
@@ -217,6 +216,13 @@ class Pipeline:
 
         # If an output file path is provided, save the DataFrame as a Parquet file
         if output_file:
+            if importlib.util.find_spec("pyarrow") is None:
+                warnings.warn("The pyarrow library is not installed. Run `poetry install --with dev`.")
+                return stats
+
+            import pyarrow.parquet as pq
+            import pyarrow as pa
+
             table = pa.Table.from_pandas(stats)
             pq.write_table(table, output_file)
 
