@@ -1,3 +1,4 @@
+import datetime
 import importlib.util
 import os
 import pandas as pd
@@ -123,12 +124,15 @@ class Pipeline:
             # print(dga_family_details)
             # print("+ --------------------------------- +")
 
+        timestamp_ms = int(datetime.datetime.now(datetime.UTC).timestamp() * 1e3)
+
         result = {
-            "domain": stats["domain_name"],
+            "domain_name": stats["domain_name"],
             "aggregate_probability": stats["badness_probability"],
             "aggregate_description": "...",
             "classification_results": [
                 {
+                    "classification_date": timestamp_ms,
                     "classifier": "Phishing",
                     "probability": stats["phishing_avg"],
                     "description": phishing_desc,
@@ -138,6 +142,7 @@ class Pipeline:
                     }
                 },
                 {
+                    "classification_date": timestamp_ms,
                     "classifier": "Malware",
                     "probability": stats["malware_avg"],
                     "description": malware_desc,
@@ -147,6 +152,7 @@ class Pipeline:
                     }
                 },
                 {
+                    "classification_date": timestamp_ms,
                     "classifier": "DGA",
                     "probability": stats["dga_binary_nn_result"],
                     "description": dga_desc,
