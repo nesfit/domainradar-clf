@@ -57,13 +57,13 @@ class Clf_dga_multiclass_lgbm:
 
     def classify(self, input_data: DataFrame) -> list:
         # Load the trained model
-        
+
         # Preserve only lex_ columns
         input_data = input_data.filter(regex='^lex_')
-        
+
         # Handle NaNs
         input_data.fillna(-1, inplace=True)
-        
+
         # Make predictions for all domain names
         predicted_families_prob = self.model.predict_proba(input_data)
 
@@ -80,7 +80,7 @@ class Clf_dga_multiclass_lgbm:
 
             # Sort families by probability
             dga_families = dict(sorted(dga_families.items(), key=operator.itemgetter(1), reverse=True))
-            
+
             results.append(dga_families)
 
         return results
