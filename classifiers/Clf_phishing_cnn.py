@@ -5,8 +5,8 @@ The classifier uses a convolution neural network (CNN) model to classify phishin
 domain names. Feature values are transformed into a 2D matrix which is then
 processed by the model and its convolution layers.
 """
-__author__ = "Jan Polisensky (model definition & training)" \
-             "Radek Hranicky (supporting class, testing, integration)"
+__authors__ = ["Jan Polisensky (model definition & training)",
+               "Radek Hranicky (supporting class, testing, integration)"]
 
 import math
 import os

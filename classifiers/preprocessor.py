@@ -11,8 +11,8 @@ where we classify new data using existing pre-trained models.
 
 IMPORTANT: DO NOT use this class for data processing when training new models!
 """
-__author__ = "Petr Pouc (invention of NDF, original implementation)" \
-             "Radek Hranicky (lightweight reimplementation for production)"
+__authors__ = ["Petr Pouc (invention of NDF, original implementation)",
+               "Radek Hranicky (lightweight reimplementation for production)"]
 
 # Standard library imports
 import os
