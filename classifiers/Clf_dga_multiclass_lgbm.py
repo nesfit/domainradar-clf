@@ -11,6 +11,8 @@ import pickle
 
 from pandas import DataFrame
 
+from classifiers.options import PipelineOptions
+
 
 class Clf_dga_multiclass_lgbm:
     """
@@ -19,16 +21,13 @@ class Clf_dga_multiclass_lgbm:
         Use the `classify` method to classify a dataset of domain names.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the classifier.
         """
 
-        # Get the directory of the current file
-        self.base_dir = os.path.dirname(__file__)
-
         # Load the LightGBM model
-        self.model = pickle.load(open(os.path.join(self.base_dir, "models/dga_multiclass_lgbm_model.pkl"), "rb"))
+        self.model = pickle.load(open(os.path.join(options.models_dir, "dga_multiclass_lgbm_model.pkl"), "rb"))
 
         # Get the number of features expected by the model
         self.expected_feature_size = self.model.n_features_

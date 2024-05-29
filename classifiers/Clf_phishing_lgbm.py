@@ -12,6 +12,8 @@ import numpy as np
 from pandas import DataFrame
 from pandas.core.dtypes import common as com
 
+from classifiers.options import PipelineOptions
+
 
 class Clf_phishing_lgbm:
     """
@@ -20,16 +22,13 @@ class Clf_phishing_lgbm:
         Use the `classify` method to classify a dataset of domain names.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the classifier.
         """
 
-        # Get the directory of the current file
-        base_dir = os.path.dirname(__file__)
-
         # Load the LightGBM model
-        self.model = joblib.load(os.path.join(base_dir, 'models/phishing_lgbm_model_nonndf.joblib'))
+        self.model = joblib.load(os.path.join(options.models_dir, 'phishing_lgbm_model_nonndf.joblib'))
 
         # Get the number of features expected by the model
         self.expected_feature_size = self.model.n_features_

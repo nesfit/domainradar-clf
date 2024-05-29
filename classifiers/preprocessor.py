@@ -31,6 +31,8 @@ from pandas.core.dtypes import common as com
 import torch
 from torch import Tensor
 
+from classifiers.options import PipelineOptions
+
 # Suppress specific warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="pandas.api.types")
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -43,27 +45,28 @@ class Preprocessor:
     Uses pre-computed boundary and scaler configuration.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the preprocessor with the stored values of scalers, outliers, etc.
         """
         # Get the directory of the current file
-        base_dir = os.path.dirname(__file__)
+        boundaries_dir = options.boundaries_dir
+        models_dir = options.models_dir
 
         self.stored = {"dga_binary": dict(), "dga_multiclass": dict(), "phishing": dict(), "malware": dict()}
-        self.stored["dga_binary"]["scaler"] = joblib.load(os.path.join(base_dir, "boundaries/dga_binary_scaler.joblib"))
+        self.stored["dga_binary"]["scaler"] = joblib.load(os.path.join(boundaries_dir, "dga_binary_scaler.joblib"))
         self.stored["dga_binary"]["outliers"] = joblib.load(
-            os.path.join(base_dir, "boundaries/dga_binary_outliers.joblib"))
+            os.path.join(boundaries_dir, "dga_binary_outliers.joblib"))
         self.stored["dga_multiclass"]["scaler"] = joblib.load(
-            os.path.join(base_dir, "boundaries/dga_multiclass_scaler.joblib"))
+            os.path.join(boundaries_dir, "dga_multiclass_scaler.joblib"))
         self.stored["dga_multiclass"]["outliers"] = joblib.load(
-            os.path.join(base_dir, "boundaries/dga_multiclass_outliers.joblib"))
-        self.stored["phishing"]["scaler"] = joblib.load(os.path.join(base_dir, "boundaries/phishing_scaler.joblib"))
-        self.stored["phishing"]["outliers"] = joblib.load(os.path.join(base_dir, "boundaries/phishing_outliers.joblib"))
-        self.stored["phishing"]["cf_model"] = joblib.load(os.path.join(base_dir, "models/phishing_ndf_cf_tree.joblib"))
-        self.stored["malware"]["scaler"] = joblib.load(os.path.join(base_dir, "boundaries/malware_scaler.joblib"))
-        self.stored["malware"]["outliers"] = joblib.load(os.path.join(base_dir, "boundaries/malware_outliers.joblib"))
-        self.stored["malware"]["cf_model"] = joblib.load(os.path.join(base_dir, "models/malware_ndf_cf_tree.joblib"))
+            os.path.join(boundaries_dir, "dga_multiclass_outliers.joblib"))
+        self.stored["phishing"]["scaler"] = joblib.load(os.path.join(boundaries_dir, "phishing_scaler.joblib"))
+        self.stored["phishing"]["outliers"] = joblib.load(os.path.join(boundaries_dir, "phishing_outliers.joblib"))
+        self.stored["phishing"]["cf_model"] = joblib.load(os.path.join(models_dir, "phishing_ndf_cf_tree.joblib"))
+        self.stored["malware"]["scaler"] = joblib.load(os.path.join(boundaries_dir, "malware_scaler.joblib"))
+        self.stored["malware"]["outliers"] = joblib.load(os.path.join(boundaries_dir, "malware_outliers.joblib"))
+        self.stored["malware"]["cf_model"] = joblib.load(os.path.join(models_dir, "malware_ndf_cf_tree.joblib"))
 
     def apply_scaling(self, df: pd.DataFrame, classifier_type: str):
         """

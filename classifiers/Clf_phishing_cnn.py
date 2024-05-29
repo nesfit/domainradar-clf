@@ -16,6 +16,7 @@ import torch
 import torch.nn.functional as F
 
 from .models.phishing_cnn_model_net import Net as Phishing_CNN_Net
+from .options import PipelineOptions
 
 
 class Clf_phishing_cnn:
@@ -25,15 +26,12 @@ class Clf_phishing_cnn:
         Use the `classify` method to classify a dataset of domain names.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the classifier.
         """
 
         self.device = torch.device("cpu")  # Production environment uses CPU
-
-        # Get the directory of the current file
-        self.base_dir = os.path.dirname(__file__)
 
         # The number of features in the feature vector
         # IMPORTANT: EDIT THIS if the model is changed!
@@ -45,7 +43,7 @@ class Clf_phishing_cnn:
         self.padding = self.desired_size - self.feature_size
 
         # Load and evaluate the model
-        self.state_dict = torch.load(os.path.join(self.base_dir, 'models/phishing_cnn_model_state_dict.pth'),
+        self.state_dict = torch.load(os.path.join(options.models_dir, 'phishing_cnn_model_state_dict.pth'),
                                      map_location=self.device)
         self.model = Phishing_CNN_Net(self.side_size).to(self.device)
         self.model.load_state_dict(self.state_dict)

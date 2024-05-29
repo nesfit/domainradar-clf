@@ -1,9 +1,9 @@
 import datetime
 import importlib.util
-import os
 import pandas as pd
 import warnings
 
+from .options import PipelineOptions
 from .preprocessor import Preprocessor
 
 from .Clf_phishing_cnn import Clf_phishing_cnn
@@ -16,26 +16,25 @@ from .Clf_decision_nn import Clf_decision_nn
 
 
 class Pipeline:
-    def __init__(self):
+    def __init__(self, options: PipelineOptions | None = None):
         """
         Initializes the classification pipeline.
         """
 
-        # Initialize paths
-        self.module_dir = os.path.dirname(__file__)
-        # self.model_path = os.path.join(self.module_dir, "models")
+        if options is None:
+            options = PipelineOptions()
 
         # Initialize preprocessor
-        self.pp = Preprocessor()
+        self.pp = Preprocessor(options)
 
         # Load classifiers
-        self.clf_phishing_cnn = Clf_phishing_cnn()
-        self.clf_phishing_lgbm = Clf_phishing_lgbm()
-        self.clf_malware_cnn = Clf_malware_cnn()
-        self.clf_malware_xgboost = Clf_malware_xgboost()
-        self.clf_dga_binary_nn = Clf_dga_binary_nn()
-        self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm()
-        self.clf_decision_nn = Clf_decision_nn()
+        self.clf_phishing_cnn = Clf_phishing_cnn(options)
+        self.clf_phishing_lgbm = Clf_phishing_lgbm(options)
+        self.clf_malware_cnn = Clf_malware_cnn(options)
+        self.clf_malware_xgboost = Clf_malware_xgboost(options)
+        self.clf_dga_binary_nn = Clf_dga_binary_nn(options)
+        self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm(options)
+        self.clf_decision_nn = Clf_decision_nn(options)
 
         # Suppress FutureWarning
         warnings.simplefilter(action='ignore', category=FutureWarning)
