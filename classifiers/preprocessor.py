@@ -17,16 +17,19 @@ __authors__ = ["Petr Pouc (invention of NDF, original implementation)",
 # Standard library imports
 import os
 import datetime
+
 import joblib
 import warnings
 
 # Third-party imports for data handling and computation
 import numpy as np
 import pandas as pd
+from pandas import Index
 from pandas.core.dtypes import common as com
 
 # Machine learning and feature selection libraries
 import torch
+from torch import Tensor
 
 # Suppress specific warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="pandas.api.types")
@@ -128,7 +131,8 @@ class Preprocessor:
                 )
         return features
 
-    def apply_eda(self, features: pd.DataFrame, classifier_type: str, drop_categorical=True) -> None:
+    def apply_eda(self, features: pd.DataFrame, classifier_type: str,
+                  drop_categorical=True) -> tuple[Tensor, Index]:
         """
         Applies feature transformations like scaling, encoding, outlier handling,
         and categorical feature processing using store values obtained
