@@ -6,13 +6,11 @@ Classifies phishing domains using the Light Gradient-Boosting Machine (LightGBM)
 __author__ = "Radek Hranicky"
 
 import operator
-import joblib
-import pickle
-import lightgbm as lgb
-import numpy as np
 import os
+import pickle
+
 from pandas import DataFrame
-from pandas.core.dtypes import common as com
+
 
 class Clf_dga_multiclass_lgbm:
     """

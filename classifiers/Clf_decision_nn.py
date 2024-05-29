@@ -6,10 +6,8 @@ __author__ = "Radek Hranicky"
 
 
 import os
-import pandas as pd
 import numpy as np
 
-from sklearn.preprocessing import MinMaxScaler
 import joblib
 from pandas import DataFrame
 from pandas.core.dtypes import common as com

@@ -1,13 +1,7 @@
 import os
-import joblib
-import math
 import pandas as pd
-import numpy as np
-import torch
-import torch.nn.functional as F
 import warnings
 
-import lightgbm as lgb
 from .preprocessor import Preprocessor
 
 import pyarrow.parquet as pq
@@ -56,7 +50,7 @@ class Pipeline:
         prefixes = ['dns_', 'tls_', 'ip_', 'rdap_', 'geo_'] # lex_ is always present
 
         # Initialize a DataFrame with domain names only
-        
+
         stats = domain_data[['domain_name']].copy()
         #stats.set_index('domain_name', inplace=True)
 
@@ -64,26 +58,26 @@ class Pipeline:
         for prefix in prefixes:
             # Filter columns with the current prefix
             prefixed_columns = [col for col in domain_data.columns if col.startswith(prefix)]
-            
+
             # Calculate the availability ratio (non-None values)
             stats[f'{prefix}available'] = domain_data[prefixed_columns].notna().mean(axis=1)
-            
+
             # Calculate the nonzero ratio (non-zero values, treating None as zero)
             stats[f'{prefix}nonzero'] = domain_data[prefixed_columns].fillna(0).astype(bool).mean(axis=1)
-        
+
         return stats
-    
+
 
     def calculate_badness_probability(self, domain_stats: pd.Series) -> float:
         """
         Calculates the badness probability based on the results of invividual classifiers
         and statistical properties of the domain features.
         """
-        
+
         return self.clf_decision_nn.classify(pd.DataFrame([domain_stats]))[0]
 
         #return domain_stats["total_avg"]  # Just for testing
-    
+
 
     def generate_result(self, stats: pd.Series) -> dict:
         """
@@ -182,17 +176,17 @@ class Pipeline:
         # Add the label to the statistics (if present in the input DataFrame)
         if "label" in df.columns:
             stats["label"] = df["label"]
-        
+
         # Get NDF representation of the data for each classifier
         ndf_phishing = self.pp.df_to_NDF(df, "phishing")
         #oldndf_phishing = self.pp.df_to_NDF(df, "phishing", drop_categorical=False)
-        
+
         ndf_malware = self.pp.df_to_NDF(df, "malware")
         #oldndf_malware = self.pp.df_to_NDF(df, "malware", drop_categorical=False)
-        
+
         ndf_dga_binary = self.pp.df_to_NDF(df, "dga_binary")
         ndf_dga_multiclass = self.pp.df_to_NDF(df, "dga_multiclass")
-    
+
         # Get individual classifiers' results
         # Phishing
         stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
@@ -229,7 +223,7 @@ class Pipeline:
         if output_file:
             table = pa.Table.from_pandas(stats)
             pq.write_table(table, output_file)
-   
+
         return stats
 
 
@@ -241,20 +235,20 @@ class Pipeline:
         """
         # The domain name should be the index
         #df.set_index('domain_name', inplace=True)
-        
+
         # Calculate the feature statistics
         stats = self.feature_statistics(df)
-        
+
         # Get NDF representation of the data for each classifier
         ndf_phishing = self.pp.df_to_NDF(df, "phishing")
         oldndf_phishing = self.pp.df_to_NDF(df, "phishing", drop_categorical=False)
-        
+
         ndf_malware = self.pp.df_to_NDF(df, "malware")
         oldndf_malware = self.pp.df_to_NDF(df, "malware", drop_categorical=False)
-        
+
         ndf_dga_binary = self.pp.df_to_NDF(df, "dga_binary")
         ndf_dga_multiclass = self.pp.df_to_NDF(df, "dga_multiclass")
-    
+
         # Get individual classifiers' results
         # Phishing
         stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)

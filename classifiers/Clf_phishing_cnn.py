@@ -8,13 +8,15 @@ processed by the model and its convolution layers.
 __author__ = "Jan Polisensky (model definition & training)" \
              "Radek Hranicky (supporting class, testing, integration)"
 
-import pandas as pd
-import torch
-import torch.nn.functional as F
-import numpy as np
 import math
 import os
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+
 from .models.phishing_cnn_model_net import Net as Phishing_CNN_Net
+
 
 class Clf_phishing_cnn:
     """

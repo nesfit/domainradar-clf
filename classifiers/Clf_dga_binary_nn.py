@@ -5,14 +5,12 @@ __author__ = "Radek Hranicky"
 
 
 import os
-import pandas as pd
-import numpy as np
 
-from sklearn.preprocessing import MinMaxScaler
 import joblib
+import numpy as np
+import tensorflow as tf
 from pandas import DataFrame
 from pandas.core.dtypes import common as com
-import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 # Force TensorFlow to use CPU
