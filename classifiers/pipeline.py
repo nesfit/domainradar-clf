@@ -5,6 +5,7 @@ import warnings
 
 from .options import PipelineOptions
 from .preprocessor import Preprocessor
+from .feature_definition import features_in_expected_order
 
 from .Clf_phishing_cnn import Clf_phishing_cnn
 from .Clf_malware_cnn import Clf_malware_cnn
@@ -241,6 +242,9 @@ class Pipeline:
         """
         # The domain name should be the index
         # df.set_index('domain_name', inplace=True)
+
+        # Shuffle the feature vector to the order in which it was used in training
+        df = df.reindex(columns=features_in_expected_order, copy=False)
 
         # Calculate the feature statistics
         stats = self.feature_statistics(df)
