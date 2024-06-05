@@ -31,15 +31,15 @@ class Pipeline:
         self.pp = Preprocessor(options)
 
         # Load classifiers
-        self.clf_phishing_cnn = Clf_phishing_cnn()
-        self.clf_phishing_deepnn = Clf_phishing_deepnn()
-        self.clf_phishing_lgbm = Clf_phishing_lgbm()
-        self.clf_phishing_xgboost = Clf_phishing_xgboost()
-        self.clf_malware_cnn = Clf_malware_cnn()
-        self.clf_malware_xgboost = Clf_malware_xgboost()
-        self.clf_dga_binary_nn = Clf_dga_binary_nn()
-        self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm()
-        self.clf_decision_nn = Clf_decision_nn()
+        self.clf_phishing_cnn = Clf_phishing_cnn(options)
+        self.clf_phishing_deepnn = Clf_phishing_deepnn(options)
+        self.clf_phishing_lgbm = Clf_phishing_lgbm(options)
+        self.clf_phishing_xgboost = Clf_phishing_xgboost(options)
+        self.clf_malware_cnn = Clf_malware_cnn(options)
+        self.clf_malware_xgboost = Clf_malware_xgboost(options)
+        self.clf_dga_binary_nn = Clf_dga_binary_nn(options)
+        self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm(options)
+        self.clf_decision_nn = Clf_decision_nn(options)
 
         # Suppress FutureWarning
         warnings.simplefilter(action='ignore', category=FutureWarning)

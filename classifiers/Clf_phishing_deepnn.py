@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 
 from sklearn.preprocessing import MinMaxScaler
+from classifiers.options import PipelineOptions
+
 import joblib
 from pandas import DataFrame
 from pandas.core.dtypes import common as com
@@ -28,7 +30,7 @@ class Clf_phishing_deepnn:
         Use the `classify` method to classify a dataset of domain names.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the classifier.
         """
@@ -37,10 +39,10 @@ class Clf_phishing_deepnn:
         self.base_dir = os.path.dirname(__file__)
 
         # Load the LightGBM model
-        self.model = load_model(os.path.join(self.base_dir, 'models/phishing_deepnn_model.keras'))
+        self.model = load_model(os.path.join(options.models_dir, 'phishing_deepnn_model.keras'))
 
         # Load the scaler
-        self.scaler = joblib.load(os.path.join(self.base_dir, 'boundaries/phishing_deepnn_scaler.joblib'))
+        self.scaler = joblib.load(os.path.join(options.boundaries_dir, 'phishing_deepnn_scaler.joblib'))
 
         # Get the number of features expected by the model
         #self.expected_feature_size = self.model.n_features_

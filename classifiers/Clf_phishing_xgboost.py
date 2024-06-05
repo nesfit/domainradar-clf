@@ -12,6 +12,7 @@ import os
 
 from pandas import DataFrame
 from pandas.core.dtypes import common as com
+from classifiers.options import PipelineOptions
 
 class Clf_phishing_xgboost:
     """
@@ -20,7 +21,7 @@ class Clf_phishing_xgboost:
         Use the `classify` method to classify a dataset of domain names.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the classifier.
         """
@@ -29,7 +30,7 @@ class Clf_phishing_xgboost:
         self.base_dir = os.path.dirname(__file__)
 
         # Load the XGBoost model
-        self.model = joblib.load(os.path.join(self.base_dir, 'models/phishing_xgboost_model_nonndf.joblib'))
+        self.model = joblib.load(os.path.join(options.models_dir, 'phishing_xgboost_model_nonndf.joblib'))
 
         # Get the number of features expected by the model
         self.expected_feature_size = self.model.n_features_in_
