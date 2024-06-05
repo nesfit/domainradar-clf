@@ -11,7 +11,7 @@ p = Pipeline()
 # Create a Pandas DataFrame with domains' feature vectors
 df = pd.DataFrame({
     "domain_name": ['44445344.xyz', 'dot-pl.web.app', 'cdn.csml.dev', 'mpipes.com.hr', 'film-serial.webnode.page'],
-    #"label": ['phishing', 'malware', 'benign', 'benign', 'benign'], # Label is not known for classification
+    # "label": ['phishing', 'malware', 'benign', 'benign', 'benign'], # Label is not known for classification
     "dns_has_dnskey": [1.0, 0.0, 0.0, 0.0, 0.0],
     "dns_A_count": [0, 1, 4, 1, 0],
     "dns_AAAA_count": [0, 1, 0, 0, 0],
@@ -110,7 +110,8 @@ df = pd.DataFrame({
     "lex_begins_with_digit": [1, 0, 0, 0, 0],
     "lex_www_flag": [0, 0, 0, 0, 0],
     "lex_sub_max_consonant_len": [0, 3, 7, 2, 2],
-    "lex_sub_norm_entropy": [0.13265976555739162, 0.3522138890491458, 0.3602343766204741, 0.3752715278979704, 0.2046412423574017],
+    "lex_sub_norm_entropy": [0.13265976555739162, 0.3522138890491458, 0.3602343766204741, 0.3752715278979704,
+                             0.2046412423574017],
     "lex_sub_digit_count": [8.0, 0.0, 0.0, 0.0, 0.0],
     "lex_sub_digit_ratio": [1.0, 0.0, 0.0, 0.0, 0.0],
     "lex_sub_vowel_count": [0, 2, 0, 2, 7],
@@ -164,16 +165,21 @@ df = pd.DataFrame({
     "geo_estimated_area": [0.0, 0.0, 0.0, 6.951659440000001, 0.0],
     "geo_continent_hash": [0, 1, 1, 3, 3],
     "geo_countries_hash": [0, 187, 187, 65, 65],
-    "rdap_registration_period": [Timedelta('365 days 03:25:50'), Timedelta('2192 days 00:00:00'), Timedelta('1827 days 00:00:00'), Timedelta('3653 days 00:00:00'), Timedelta('1461 days 00:00:00')],
-    "rdap_domain_age": [482.1429513888889, 1953.0798148148149, 1727.4995717592592, 3689.0833333333335, 1161.1051851851853],
-    "rdap_time_from_last_change": [457.2892824074074, 154.57892361111112, 221.49957175925925, 3689.0833333333335, 815.4650347222222],
+    "rdap_registration_period": [Timedelta('365 days 03:25:50'), Timedelta('2192 days 00:00:00'),
+                                 Timedelta('1827 days 00:00:00'), Timedelta('3653 days 00:00:00'),
+                                 Timedelta('1461 days 00:00:00')],
+    "rdap_domain_age": [482.1429513888889, 1953.0798148148149, 1727.4995717592592, 3689.0833333333335,
+                        1161.1051851851853],
+    "rdap_time_from_last_change": [457.2892824074074, 154.57892361111112, 221.49957175925925, 3689.0833333333335,
+                                   815.4650347222222],
     "rdap_domain_active_time": [365.14293981481484, 1953.0798148148149, 1727.4995717592592, 3653.0, 1161.1051851851853],
     "rdap_has_dnssec": [False, False, False, False, False],
     "rdap_registrar_name_len": [9, 16, 27, 0, 22],
     "rdap_registrar_name_entropy": [0.3028311729997631, 0.21875, 0.15208804877103807, 0.0, 0.16551135456615812],
     "rdap_registrar_name_hash": [1751207475, 4215097277, 3912328311, 4294967295, 3897680919],
     "rdap_registrant_name_len": [52, 30, 40, 0, 10],
-    "rdap_registrant_name_entropy": [0.0765247446216602, 0.1405020337401023, 0.10663278830562754, 0.0, 0.3121928094887362],
+    "rdap_registrant_name_entropy": [0.0765247446216602, 0.1405020337401023, 0.10663278830562754, 0.0,
+                                     0.3121928094887362],
     "rdap_admin_name_len": [0, 0, 0, 0, 0],
     "rdap_admin_name_entropy": [0.0, 0.0, 0.0, 0.0, 0.0],
     "rdap_admin_email_len": [0, 0, 0, 0, 0],
@@ -185,9 +191,11 @@ df = pd.DataFrame({
     "rdap_ip_shortest_v6_prefix_len": [0, 48, 0, 0, 0],
     "rdap_ip_longest_v6_prefix_len": [0, 48, 0, 0, 0],
     "rdap_ip_avg_admin_name_len": [0.0, 10.0, 13.0, 13.0, 13.0],
-    "rdap_ip_avg_admin_name_entropy": [0.0, 0.2921928094887362, 0.24914625050789468, 0.24914625050789466, 0.24914625050789468],
+    "rdap_ip_avg_admin_name_entropy": [0.0, 0.2921928094887362, 0.24914625050789468, 0.24914625050789466,
+                                       0.24914625050789468],
     "rdap_ip_avg_admin_email_len": [0.0, 23.0, 23.0, 17.0, 23.0],
-    "rdap_ip_avg_admin_email_entropy": [0.0, 0.15744241490954225, 0.14988097823657437, 0.22398609273042325, 0.14988097823657437],
+    "rdap_ip_avg_admin_email_entropy": [0.0, 0.15744241490954225, 0.14988097823657437, 0.22398609273042325,
+                                        0.14988097823657437],
 })
 
 results = p.classify_domains(df)

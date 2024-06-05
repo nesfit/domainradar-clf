@@ -3,7 +3,7 @@
 ## Usage
 
 Modify the **pyproject.toml** file in your Python Poetry project - extend the `[tool.poetry.dependencies]` section with:
-`classifiers = { git = git@github.com:ihranicky/domainradar-clf.git, branch = "main }`
+`classifiers = { git = git@github.com:nesfit/domainradar-clf.git, branch = "main }`
 
 Then type:
 `poetry update`
@@ -39,6 +39,13 @@ In the domainradar-clf root directory, enter:
 ```
 poetry install
 ```
+
+To experiment with the included notebooks, you have to explicitly include
+the development dependencies:
+```
+poetry install --with dev
+```
+
 You can run scripts from the **classifiers** directory from
 ```
 poetry shell

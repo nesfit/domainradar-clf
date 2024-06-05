@@ -11,33 +11,33 @@ where we classify new data using existing pre-trained models.
 
 IMPORTANT: DO NOT use this class for data processing when training new models!
 """
-__author__ = "Petr Pouc (invention of NDF, original implementation)" \
-             "Radek Hranicky (lightweight reimplementation for production)"
+__authors__ = ["Petr Pouc (invention of NDF, original implementation)",
+               "Radek Hranicky (lightweight reimplementation for production)"]
 
 # Standard library imports
 import os
 import datetime
+
 import joblib
 import warnings
 
 # Third-party imports for data handling and computation
 import numpy as np
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-from pyarrow import Table
+from pandas import Index
 from pandas.core.dtypes import common as com
-from pandas import DataFrame
 
 # Machine learning and feature selection libraries
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.tree import DecisionTreeClassifier
 import torch
+from torch import Tensor
+
+from classifiers.options import PipelineOptions
 
 # Suppress specific warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="pandas.api.types")
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
+
 
 class Preprocessor:
     """
@@ -45,24 +45,28 @@ class Preprocessor:
     Uses pre-computed boundary and scaler configuration.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the preprocessor with the stored values of scalers, outliers, etc.
         """
         # Get the directory of the current file
-        base_dir = os.path.dirname(__file__)
+        boundaries_dir = options.boundaries_dir
+        models_dir = options.models_dir
 
         self.stored = {"dga_binary": dict(), "dga_multiclass": dict(), "phishing": dict(), "malware": dict()}
-        self.stored["dga_binary"]["scaler"] = joblib.load(os.path.join(base_dir, "boundaries/dga_binary_scaler.joblib"))
-        self.stored["dga_binary"]["outliers"] = joblib.load(os.path.join(base_dir, "boundaries/dga_binary_outliers.joblib"))
-        self.stored["dga_multiclass"]["scaler"] = joblib.load(os.path.join(base_dir, "boundaries/dga_multiclass_scaler.joblib"))
-        self.stored["dga_multiclass"]["outliers"] = joblib.load(os.path.join(base_dir, "boundaries/dga_multiclass_outliers.joblib"))
-        self.stored["phishing"]["scaler"] = joblib.load(os.path.join(base_dir, "boundaries/phishing_scaler.joblib"))
-        self.stored["phishing"]["outliers"] = joblib.load(os.path.join(base_dir, "boundaries/phishing_outliers.joblib"))
-        self.stored["phishing"]["cf_model"] = joblib.load(os.path.join(base_dir, "models/phishing_ndf_cf_tree.joblib"))
-        self.stored["malware"]["scaler"] = joblib.load(os.path.join(base_dir, "boundaries/malware_scaler.joblib"))
-        self.stored["malware"]["outliers"] = joblib.load(os.path.join(base_dir, "boundaries/malware_outliers.joblib"))
-        self.stored["malware"]["cf_model"] = joblib.load(os.path.join(base_dir, "models/malware_ndf_cf_tree.joblib"))
+        self.stored["dga_binary"]["scaler"] = joblib.load(os.path.join(boundaries_dir, "dga_binary_scaler.joblib"))
+        self.stored["dga_binary"]["outliers"] = joblib.load(
+            os.path.join(boundaries_dir, "dga_binary_outliers.joblib"))
+        self.stored["dga_multiclass"]["scaler"] = joblib.load(
+            os.path.join(boundaries_dir, "dga_multiclass_scaler.joblib"))
+        self.stored["dga_multiclass"]["outliers"] = joblib.load(
+            os.path.join(boundaries_dir, "dga_multiclass_outliers.joblib"))
+        self.stored["phishing"]["scaler"] = joblib.load(os.path.join(boundaries_dir, "phishing_scaler.joblib"))
+        self.stored["phishing"]["outliers"] = joblib.load(os.path.join(boundaries_dir, "phishing_outliers.joblib"))
+        self.stored["phishing"]["cf_model"] = joblib.load(os.path.join(models_dir, "phishing_ndf_cf_tree.joblib"))
+        self.stored["malware"]["scaler"] = joblib.load(os.path.join(boundaries_dir, "malware_scaler.joblib"))
+        self.stored["malware"]["outliers"] = joblib.load(os.path.join(boundaries_dir, "malware_outliers.joblib"))
+        self.stored["malware"]["cf_model"] = joblib.load(os.path.join(models_dir, "malware_ndf_cf_tree.joblib"))
 
     def apply_scaling(self, df: pd.DataFrame, classifier_type: str):
         """
@@ -86,7 +90,7 @@ class Preprocessor:
             temp_df = pd.DataFrame(0, index=numeric_df.index, columns=fitted_columns, dtype=float)
             # Ensure that the types match by casting numeric_df to float before updating temp_df
             temp_df.update(numeric_df.astype(float))
-            
+
             # Transform only the fitted columns
             scaled_data = self.stored[classifier_type]["scaler"].transform(temp_df[fitted_columns])
             columns_to_use = fitted_columns
@@ -110,7 +114,6 @@ class Preprocessor:
 
         return final_scaled_df
 
-
     def adjust_outliers(self, features, classifier_type: str):
         """
         Adjusts the outliers in the features based on the stored boundaries.
@@ -120,7 +123,7 @@ class Preprocessor:
             "outliers"
         ].items():
             if (
-                column in features.columns
+                    column in features.columns
             ):  # Ensure the column exists in the current dataset
                 features[column].apply(
                     lambda x: (
@@ -131,7 +134,8 @@ class Preprocessor:
                 )
         return features
 
-    def apply_eda(self, features: pd.DataFrame, classifier_type: str, drop_categorical=True) -> None:
+    def apply_eda(self, features: pd.DataFrame, classifier_type: str,
+                  drop_categorical=True) -> tuple[Tensor, Index]:
         """
         Applies feature transformations like scaling, encoding, outlier handling,
         and categorical feature processing using store values obtained
@@ -171,7 +175,7 @@ class Preprocessor:
             # Apply the function to each row and create a new column 'dtree_prob'
             features["dtree_prob"] = features.apply(predict_row_probability, axis=1)
 
-            if drop_categorical: # By default True
+            if drop_categorical:  # By default True
                 # Drop the categorical features
                 features.drop(columns=categorical_features, errors='ignore', inplace=True)
 
@@ -188,7 +192,7 @@ class Preprocessor:
             if com.is_timedelta64_dtype(features[col]):
                 features[col] = features[col].dt.total_seconds()
             elif com.is_datetime64_any_dtype(features[col]):
-                features[col] = features[col].astype(np.int64) // 10**9
+                features[col] = features[col].astype(np.int64) // 10 ** 9
 
         # Convert bool columns to float
         for column in features.columns:

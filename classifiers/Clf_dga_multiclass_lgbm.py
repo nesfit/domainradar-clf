@@ -6,13 +6,13 @@ Classifies phishing domains using the Light Gradient-Boosting Machine (LightGBM)
 __author__ = "Radek Hranicky"
 
 import operator
-import joblib
-import pickle
-import lightgbm as lgb
-import numpy as np
 import os
+import pickle
+
 from pandas import DataFrame
-from pandas.core.dtypes import common as com
+
+from classifiers.options import PipelineOptions
+
 
 class Clf_dga_multiclass_lgbm:
     """
@@ -21,16 +21,13 @@ class Clf_dga_multiclass_lgbm:
         Use the `classify` method to classify a dataset of domain names.
     """
 
-    def __init__(self):
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the classifier.
         """
 
-        # Get the directory of the current file
-        self.base_dir = os.path.dirname(__file__)
-
         # Load the LightGBM model
-        self.model = pickle.load(open(os.path.join(self.base_dir, "models/dga_multiclass_lgbm_model.pkl"), "rb"))
+        self.model = pickle.load(open(os.path.join(options.models_dir, "dga_multiclass_lgbm_model.pkl"), "rb"))
 
         # Get the number of features expected by the model
         self.expected_feature_size = self.model.n_features_
@@ -59,13 +56,13 @@ class Clf_dga_multiclass_lgbm:
 
     def classify(self, input_data: DataFrame) -> list:
         # Load the trained model
-        
+
         # Preserve only lex_ columns
         input_data = input_data.filter(regex='^lex_')
-        
+
         # Handle NaNs
         input_data.fillna(-1, inplace=True)
-        
+
         # Make predictions for all domain names
         predicted_families_prob = self.model.predict_proba(input_data)
 
@@ -82,7 +79,7 @@ class Clf_dga_multiclass_lgbm:
 
             # Sort families by probability
             dga_families = dict(sorted(dga_families.items(), key=operator.itemgetter(1), reverse=True))
-            
+
             results.append(dga_families)
 
         return results

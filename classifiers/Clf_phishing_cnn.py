@@ -5,16 +5,19 @@ The classifier uses a convolution neural network (CNN) model to classify phishin
 domain names. Feature values are transformed into a 2D matrix which is then
 processed by the model and its convolution layers.
 """
-__author__ = "Jan Polisensky (model definition & training)" \
-             "Radek Hranicky (supporting class, testing, integration)"
+__authors__ = ["Jan Polisensky (model definition & training)",
+               "Radek Hranicky (supporting class, testing, integration)"]
 
-import pandas as pd
-import torch
-import torch.nn.functional as F
-import numpy as np
 import math
 import os
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+
 from .models.phishing_cnn_model_net import Net as Phishing_CNN_Net
+from .options import PipelineOptions
+
 
 class Clf_phishing_cnn:
     """
@@ -22,16 +25,13 @@ class Clf_phishing_cnn:
         Expects the model loaded in the ./models/ directory.
         Use the `classify` method to classify a dataset of domain names.
     """
-    
-    def __init__(self):
+
+    def __init__(self, options: PipelineOptions):
         """
         Initializes the classifier.
         """
 
-        self.device = torch.device("cpu") # Production environment uses CPU
-
-        # Get the directory of the current file
-        self.base_dir = os.path.dirname(__file__)
+        self.device = torch.device("cpu")  # Production environment uses CPU
 
         # The number of features in the feature vector
         # IMPORTANT: EDIT THIS if the model is changed!
@@ -39,23 +39,22 @@ class Clf_phishing_cnn:
 
         # Calculate the sizes and padding of the NN model
         self.desired_size = self.next_perfect_square(self.feature_size)
-        self.side_size = int(self.desired_size**0.5)
+        self.side_size = int(self.desired_size ** 0.5)
         self.padding = self.desired_size - self.feature_size
 
         # Load and evaluate the model
-        self.state_dict = torch.load(os.path.join(self.base_dir, 'models/phishing_cnn_model_state_dict.pth'), map_location=self.device)
+        self.state_dict = torch.load(os.path.join(options.models_dir, 'phishing_cnn_model_state_dict.pth'),
+                                     map_location=self.device)
         self.model = Phishing_CNN_Net(self.side_size).to(self.device)
         self.model.load_state_dict(self.state_dict)
         self.model.eval()
-
 
     def next_perfect_square(self, n):
         """
         Calculates the next perfect square greater than a given number
         """
-        next_square = math.ceil(n**0.5)**2
+        next_square = math.ceil(n ** 0.5) ** 2
         return next_square
-    
 
     def classify(self, ndf_data: dict) -> np.array:
         """
@@ -66,18 +65,18 @@ class Clf_phishing_cnn:
 
         # Get the data tensor from the NDF dataset
         data_tensor = torch.tensor(ndf_data['features'], dtype=torch.float32)
-        
+
         # Verify if the shape is correct
         if data_tensor.shape[1] != self.feature_size:
             raise Exception("The number of features in the input data does not match the expected size!")
 
         desired_size = self.next_perfect_square(self.feature_size)
-        
+
         if self.padding > 0:
             data_tensor_padded = F.pad(data_tensor, (0, self.padding), 'constant', 0)
         else:
             data_tensor_padded = data_tensor
-        
+
         data_tensor_reshaped = data_tensor_padded.view(-1, 1, self.side_size, self.side_size)
         data_tensor_reshaped = data_tensor_reshaped.to(self.device)
 

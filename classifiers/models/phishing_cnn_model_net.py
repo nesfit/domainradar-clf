@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class Net(nn.Module):
     def __init__(self, side_size):
         super(Net, self).__init__()
@@ -34,4 +35,4 @@ class Net(nn.Module):
         x = self.dropout2(x)  # Dropout applied after first fully connected layer
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-        return self.fc4(x) 
+        return self.fc4(x)
