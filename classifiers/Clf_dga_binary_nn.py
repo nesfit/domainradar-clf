@@ -23,7 +23,7 @@ tf.config.set_visible_devices([], 'GPU')
 
 class Clf_dga_binary_nn:
     """
-        Class for the LightGBM phishing classifier.
+        Class for the deep NN DGA binary classifier.
         Expects the model loaded in the ./models/ directory.
         Use the `classify` method to classify a dataset of domain names.
     """

@@ -15,7 +15,9 @@ import pyarrow as pa
 
 from .Clf_phishing_cnn import Clf_phishing_cnn
 from .Clf_malware_cnn import Clf_malware_cnn
+from .Clf_phishing_deepnn import Clf_phishing_deepnn
 from .Clf_phishing_lgbm import Clf_phishing_lgbm
+from .Clf_phishing_xgboost import Clf_phishing_xgboost
 from .Clf_malware_xgboost import Clf_malware_xgboost
 from .Clf_dga_binary_nn import Clf_dga_binary_nn
 from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
@@ -37,7 +39,9 @@ class Pipeline:
 
         # Load classifiers
         self.clf_phishing_cnn = Clf_phishing_cnn()
+        self.clf_phishing_deepnn = Clf_phishing_deepnn()
         self.clf_phishing_lgbm = Clf_phishing_lgbm()
+        self.clf_phishing_xgboost = Clf_phishing_xgboost()
         self.clf_malware_cnn = Clf_malware_cnn()
         self.clf_malware_xgboost = Clf_malware_xgboost()
         self.clf_dga_binary_nn = Clf_dga_binary_nn()
@@ -198,6 +202,7 @@ class Pipeline:
         stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
         #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
         stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
+        
 
         # Malware
         stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
@@ -224,6 +229,9 @@ class Pipeline:
         if add_final:
             # Calculate the overall badness probability
             stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
+
+        stats["phishing_xgboost_result"] = self.clf_phishing_xgboost.classify(df)
+        stats["phishing_deepnn_result"] = self.clf_phishing_deepnn.classify(df)
 
         # If an output file path is provided, save the DataFrame as a Parquet file
         if output_file:
@@ -260,6 +268,7 @@ class Pipeline:
         stats["phishing_cnn_result"] = self.clf_phishing_cnn.classify(ndf_phishing).astype(float)
         #stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(ndf_phishing)
         stats["phishing_lgbm_result"] = self.clf_phishing_lgbm.classify(df)
+        
 
         # Malware
         stats["malware_cnn_result"] = self.clf_phishing_cnn.classify(ndf_malware).astype(float)
@@ -284,6 +293,9 @@ class Pipeline:
 
         # Calculate the overall badness probability
         stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
+
+        stats["phishing_xgboost_result"] = self.clf_phishing_xgboost.classify(df)
+        stats["phishing_deepnn_result"] = self.clf_phishing_deepnn.classify(df)
 
         # DGA Families
         stats["dga_families"] = self.clf_dga_multiclass_lgbm.classify(df)
