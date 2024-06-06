@@ -150,7 +150,7 @@ class Pipeline:
                     "classifier": "Malware",
                     "probability": stats["malware_avg"],
                     "description": malware_desc,
-                    "details:": {
+                    "details": {
                         "CNN malware classifier": str(round(stats["malware_cnn_result"] * 100, 2)) + "%",
                         "XGBoost malware classifier": str(round(stats["malware_xgboost_result"] * 100, 2)) + "%",
                     }
@@ -160,7 +160,7 @@ class Pipeline:
                     "classifier": "DGA",
                     "probability": stats["dga_binary_nn_result"],
                     "description": dga_desc,
-                    "details:": dga_family_details
+                    "details": dga_family_details
                 }
             ]
         }
