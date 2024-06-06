@@ -2,6 +2,7 @@ import datetime
 import importlib.util
 import pandas as pd
 import warnings
+import joblib
 
 from .options import PipelineOptions
 from .preprocessor import Preprocessor
@@ -75,9 +76,24 @@ class Pipeline:
         and statistical properties of the domain features.
         """
 
-        return self.clf_decision_nn.classify(pd.DataFrame([domain_stats]))[0]
+        badness_probability = self.clf_decision_nn.classify(pd.DataFrame([domain_stats]))[0]
 
-        # return domain_stats["total_avg"]  # Just for testing
+
+        # Apply corrections
+        #badness_probability -= 0.05
+
+        # Temporary heuristics (TODO: fix)
+        if not domain_stats["phishing_avg"] > 0.8 and domain_stats["malware_avg"] > 0.8:
+            badness_probability -= 0.1
+
+        if not domain_stats["phishing_avg"] > 0.5 and domain_stats["malware_avg"] > 0.5:
+            badness_probability -= 0.1
+
+
+        if badness_probability < 0.0:
+            badness_probability = 0.0
+
+        return badness_probability
 
     def generate_result(self, stats: pd.Series) -> dict:
         """
@@ -241,6 +257,28 @@ class Pipeline:
             pq.write_table(table, output_file)
 
         return stats
+    
+
+    def dump_ndf(self, df: pd.DataFrame, classifier_type: str, output_filename=False) -> list[dict]:
+        """
+        Creates an NDF representation of the input data and stores it as a file.
+        """
+
+        if classifier_type != "phishing" and classifier_type != "malware" and \
+            classifier_type != "dga_binary" and classifier_type != "dga_multiclass":
+            raise ValueError("Invalid classifier type") 
+
+        # Shuffle the feature vector to the order in which it was used in training
+        df = df.reindex(columns=features_in_expected_order, copy=False)
+
+        ndf = self.pp.df_to_NDF(df, classifier_type)
+
+        # Store as file if necessary
+        if output_filename:
+            joblib.dump(ndf, output_filename)
+
+        return ndf
+
 
     def classify_domains(self, df: pd.DataFrame) -> list[dict]:
         """
