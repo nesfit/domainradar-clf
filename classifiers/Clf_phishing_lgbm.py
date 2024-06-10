@@ -6,7 +6,7 @@ Classifies phishing domains using the Light Gradient-Boosting Machine (LightGBM)
 __author__ = "Radek Hranicky"
 
 import os
-
+import shap
 import joblib
 import numpy as np
 from pandas import DataFrame
@@ -29,6 +29,9 @@ class Clf_phishing_lgbm:
 
         # Load the LightGBM model
         self.model = joblib.load(os.path.join(options.models_dir, 'phishing_lgbm_model_nonndf.joblib'))
+
+        # Initialize SHAP explainer
+        self.explainer = shap.TreeExplainer(self.model)
 
         # Get the number of features expected by the model
         self.expected_feature_size = self.model.n_features_
@@ -64,6 +67,69 @@ class Clf_phishing_lgbm:
         # probabilities = self.model.predict_proba(X)[:, 0]
 
         return probabilities
+    
+
+    def debug_domain(self, domain_name: str, input_data: DataFrame, n_top_features: int = 10):
+        """
+        Debug a specific domain by calculating the feature importance for its classification.
+        
+        Args:
+            domain_name (str): The domain name to debug.
+            input_data (DataFrame): The feature vector of the domain.
+            n_top_features (int, optional): Number of top features to display. Default is 10.
+        """
+        # Find the row corresponding to the domain name
+        domain_row = input_data[input_data['domain_name'] == domain_name]
+        if domain_row.empty:
+            raise ValueError("Domain name not found in the input data.")
+
+        # Drop the 'domain_name' and 'label' columns if they exist
+        domain_row = domain_row.drop(['domain_name', 'label'], axis=1, errors='ignore')
+
+        # Cast timestamps
+        domain_row = self.cast_timestamp(domain_row)
+
+        # Handle NaNs
+        domain_row.fillna(-1, inplace=True)
+
+        # Calculate SHAP values for the domain
+        shap_values = self.explainer.shap_values(domain_row)
+
+        # Get the base value (average model output)
+        base_value = self.explainer.expected_value
+
+        # Get feature importance for the specific prediction
+        domain_shap_values = shap_values[0]  # Since predict_proba is used, shap_values is a list
+        domain_feature_importance = zip(domain_row.columns, domain_shap_values)
+
+        # Sort features by absolute SHAP value
+        sorted_feature_importance = sorted(domain_feature_importance, key=lambda x: abs(x[1]), reverse=True)
+
+        # Get the top n features
+        top_features = sorted_feature_importance[:n_top_features]
+
+        # Store the top features and their values in a dictionary
+        feature_info = []
+        for feature, importance in top_features:
+            feature_info.append({
+                "feature": feature,
+                "value": domain_row[feature].values[0],
+                "shap_value": importance
+            })
+
+        # Calculate the probability for the domain
+        probability = self.model.predict_proba(domain_row)[:, 1][0]
+
+        # Create data for the force plot
+        force_plot_data = (base_value, domain_shap_values, domain_row)
+
+        # Return the information as a dictionary
+        return {
+            "top_features": feature_info,
+            "probability": probability,
+            "force_plot_data": force_plot_data
+        }
+
 
     def classify(self, input_data: DataFrame) -> list:
         # Load the trained model

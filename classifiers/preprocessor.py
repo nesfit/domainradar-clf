@@ -135,6 +135,101 @@ class Preprocessor:
         return features
 
     def apply_eda(self, features: pd.DataFrame, classifier_type: str,
+                  drop_categorical=True) -> tuple[Tensor, pd.Index]:
+        """
+        Applies feature transformations like scaling, encoding, outlier handling,
+        and categorical feature processing using store values obtained
+        by exploratory data analysis (EDA) on the training dataset.
+        """
+
+        categorical_features = [
+            "lex_tld_hash",
+            "geo_continent_hash",
+            "geo_countries_hash",
+            "rdap_registrar_name_hash",
+            "tls_root_authority_hash",
+            "tls_leaf_authority_hash",
+        ]
+
+        if classifier_type.startswith("dga"):
+            # For DGA classifiers, preserve only features that start with lex_ (and the domain name)
+            columns_to_keep = [col for col in features.columns if col.startswith("lex_")]
+            # Keep only the specified columns
+            features = features[columns_to_keep]
+        else:
+            # For non-DGA classifiers, process categorical features with the stored decision tree
+            # The result stored as "dtree_prob" then serves as a feature
+            # Note: This is mostly used for NN classifiers, but has shown to be useful with
+            # tree-based models as well
+
+            ## Define a function to predict probability for a single row
+            def predict_row_probability(row):
+                row_df = (
+                    row[categorical_features].to_frame().T
+                )  # Ensure the row is a DataFrame
+                return self.stored[classifier_type]["cf_model"].predict_proba(row_df)[0, 1]
+
+            # Apply the function to each row and create a new column 'dtree_prob'
+            features["dtree_prob"] = features.apply(predict_row_probability, axis=1)
+
+            if drop_categorical:  # By default True
+                # Drop the categorical features
+                features.drop(columns=categorical_features, errors='ignore', inplace=True)
+
+        # Store original domain names if present
+        domain_names = features['domain_name'] if 'domain_name' in features.columns else None
+
+        # Drop the domain name column (if present)
+        if 'domain_name' in features.columns:
+            features = features.drop(columns=['domain_name'])
+
+        # Drop the label column (if present)
+        if 'label' in features.columns:
+            features = features.drop(columns=['label'])
+
+        # Process timestamps
+        for col in features.columns:
+            if com.is_timedelta64_dtype(features[col]):
+                features[col] = features[col].dt.total_seconds()
+            elif com.is_datetime64_any_dtype(features[col]):
+                features[col] = features[col].astype(np.int64) // 10 ** 9
+
+        # Convert bool columns to float
+        for column in features.columns:
+            if features[column].dtype == "bool":
+                features[column] = features[column].astype("float64")
+
+        # Handling missing values in features
+        features.fillna(-1, inplace=True)
+
+        # Adjust outliers
+        features = self.adjust_outliers(features, classifier_type)
+
+        # Apply scaling
+        features = self.apply_scaling(features, classifier_type)
+
+        feature_names = features.columns
+
+        # Convert to PyTorch tensor, handling errors and printing problematic rows
+        try:
+            tensor_features = torch.tensor(features.values).float()
+        except TypeError as e:
+            for i, row in features.iterrows():
+                try:
+                    torch.tensor(row.values).float()
+                except TypeError:
+                    problematic_value = row.values
+                    domain_name = domain_names[i] if domain_names is not None else 'N/A'
+                    print(f"Error converting row with domain name: {domain_name}")
+                    print(f"Problematic value: {problematic_value}")
+                    # Fill problematic values with -1
+                    row.fillna(-1, inplace=True)
+            # Retry conversion after handling problematic rows
+            tensor_features = torch.tensor(features.values).float()
+
+        return tensor_features, feature_names
+
+    def _apply_eda(self, features: pd.DataFrame, classifier_type: str,
                   drop_categorical=True) -> tuple[Tensor, Index]:
         """
         Applies feature transformations like scaling, encoding, outlier handling,
@@ -228,12 +323,16 @@ class Preprocessor:
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
         dataset_name = f"dataset_{current_date}"
 
+        # Extract domain names
+        domain_names = input_data['domain_name'].tolist() if 'domain_name' in input_data.columns else []
+
         dataset = {
             "name": dataset_name,
+            "domain_names": domain_names,
             "features": features,
             "labels": [None for _ in range(features.shape[0])],
             "dimension": features.shape[1],
-            "feature_names": feature_names,
+            "feature_names": feature_names,    
             "one_line_processing": True,
         }
 

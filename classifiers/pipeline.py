@@ -53,20 +53,23 @@ class Pipeline:
         prefixes = ['dns_', 'tls_', 'ip_', 'rdap_', 'geo_']  # lex_ is always present
 
         # Initialize a DataFrame with domain names only
-
         stats = domain_data[['domain_name']].copy()
-        # stats.set_index('domain_name', inplace=True)
 
         # Iterate through each prefix to calculate the required ratios
         for prefix in prefixes:
             # Filter columns with the current prefix
             prefixed_columns = [col for col in domain_data.columns if col.startswith(prefix)]
 
-            # Calculate the availability ratio (non-None values)
-            stats[f'{prefix}available'] = domain_data[prefixed_columns].notna().mean(axis=1)
+            if prefixed_columns:
+                # Calculate the availability ratio (non-None values)
+                stats[f'{prefix}available'] = domain_data[prefixed_columns].notna().mean(axis=1)
 
-            # Calculate the nonzero ratio (non-zero values, treating None as zero)
-            stats[f'{prefix}nonzero'] = domain_data[prefixed_columns].fillna(0).astype(bool).mean(axis=1)
+                # Calculate the nonzero ratio (non-zero values, treating None as zero)
+                stats[f'{prefix}nonzero'] = domain_data[prefixed_columns].fillna(0).astype(bool).mean(axis=1)
+            else:
+                # If no columns with the current prefix exist, set ratios to 0
+                stats[f'{prefix}available'] = 0
+                stats[f'{prefix}nonzero'] = 0
 
         return stats
 
@@ -280,6 +283,28 @@ class Pipeline:
         return ndf
 
 
+    def debug_domain(self, domain_name: str, df: pd.DataFrame, n_top_features: int = 10):
+        """
+        Debugs a single domain name by showing the most important features for decision
+        """
+        
+        df = df.copy()
+
+        # Drop all undesired columns
+        df = df[[col for col in df.columns if col in features_in_expected_order]]
+
+        # Rearrange the feature vector to the order in which it was used in training
+        df = df.reindex(columns=features_in_expected_order, copy=False)
+
+        ndf_phishing = self.pp.df_to_NDF(df, "phishing")
+
+        return {
+            #"phishing_cnn": self.clf_phishing_cnn.debug_domain(domain_name, ndf_phishing, n_top_features),
+            "phishing_lgbm": self.clf_phishing_lgbm.debug_domain(domain_name, df, n_top_features)
+            # TODO: Add explanations for other classifiers
+        }
+
+
     def classify_domains(self, df: pd.DataFrame) -> list[dict]:
         """
         Classifies the domains from a pandas df and returns list the results.
@@ -289,7 +314,7 @@ class Pipeline:
         # The domain name should be the index
         # df.set_index('domain_name', inplace=True)
 
-        # Shuffle the feature vector to the order in which it was used in training
+        # Rearrange the feature vector to the order in which it was used in training
         df = df.reindex(columns=features_in_expected_order, copy=False)
 
         # Calculate the feature statistics
