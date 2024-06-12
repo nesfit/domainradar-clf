@@ -36,6 +36,9 @@ class Clf_phishing_lgbm:
         # Get the number of features expected by the model
         self.expected_feature_size = self.model.n_features_
 
+        # Columns that are not used in the model
+        self.disqualified_columns = ["tls_joint_isoitu_policy_crt_count", "rdap_time_from_last_change", "lex_www_flag"]
+
     def cast_timestamp(self, df: DataFrame):
         """
         Cast timestamp fields to seconds since epoch.
@@ -69,7 +72,7 @@ class Clf_phishing_lgbm:
         return probabilities
     
 
-    def debug_domain(self, domain_name: str, input_data: DataFrame, n_top_features: int = 10):
+    def debug_domain(self, domain_name: str, feature_vectors: DataFrame, n_top_features: int = 10):
         """
         Debug a specific domain by calculating the feature importance for its classification.
         
@@ -78,6 +81,14 @@ class Clf_phishing_lgbm:
             input_data (DataFrame): The feature vector of the domain.
             n_top_features (int, optional): Number of top features to display. Default is 10.
         """
+
+        input_data = feature_vectors.copy()
+
+        # Remove disqualified columns
+        for column in self.disqualified_columns:
+            if column in input_data.columns:
+                input_data.drop(column, axis=1, inplace=True)
+                
         # Find the row corresponding to the domain name
         domain_row = input_data[input_data['domain_name'] == domain_name]
         if domain_row.empty:
@@ -131,8 +142,14 @@ class Clf_phishing_lgbm:
         }
 
 
-    def classify(self, input_data: DataFrame) -> list:
-        # Load the trained model
+    def classify(self, feature_vectors: DataFrame) -> list:
+
+        input_data = feature_vectors.copy()
+
+        # Remove disqualified columns
+        for column in self.disqualified_columns:
+            if column in input_data.columns:
+                input_data.drop(column, axis=1, inplace=True)
 
         # Drop the 'domain_name' column if it exists
         if 'domain_name' in input_data.columns:

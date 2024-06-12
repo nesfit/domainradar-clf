@@ -35,6 +35,9 @@ class Clf_phishing_xgboost:
         # Get the number of features expected by the model
         self.expected_feature_size = self.model.n_features_in_
 
+        # Columns that are not used in the model
+        self.disqualified_columns = ["tls_joint_isoitu_policy_crt_count", "rdap_time_from_last_change", "lex_www_flag"]
+
 
     def cast_timestamp(self, df: DataFrame):
         """
@@ -49,8 +52,14 @@ class Clf_phishing_xgboost:
         return df
     
     
-    def classify(self, input_data: DataFrame) -> list:
-        # Load the trained model
+    def classify(self, feature_vectors: DataFrame) -> list:
+
+        input_data = feature_vectors.copy()
+
+        # Remove disqualified columns
+        for column in self.disqualified_columns:
+            if column in input_data.columns:
+                input_data.drop(column, axis=1, inplace=True)
         
         # Drop the 'domain_name' column if it exists
         if 'domain_name' in input_data.columns:
