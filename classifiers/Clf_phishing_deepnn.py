@@ -38,7 +38,7 @@ class Clf_phishing_deepnn:
         # Get the directory of the current file
         self.base_dir = os.path.dirname(__file__)
 
-        # Load the LightGBM model
+        # Load the NN model
         self.model = load_model(os.path.join(options.models_dir, 'phishing_deepnn_model.keras'))
 
         # Load the scaler
@@ -46,6 +46,9 @@ class Clf_phishing_deepnn:
 
         # Get the number of features expected by the model
         #self.expected_feature_size = self.model.n_features_
+
+        # Columns that are not used in the model
+        self.disqualified_columns = ["tls_joint_isoitu_policy_crt_count", "rdap_time_from_last_change", "lex_www_flag"]
 
     
     def cast_timestamp(self, df: DataFrame):
@@ -61,7 +64,14 @@ class Clf_phishing_deepnn:
         return df
 
 
-    def classify(self, input_data: DataFrame) -> list:
+    def classify(self, feature_vectors: DataFrame) -> list:
+        input_data = feature_vectors.copy()
+
+        # Remove disqualified columns
+        for column in self.disqualified_columns:
+            if column in input_data.columns:
+                input_data.drop(column, axis=1, inplace=True)
+
         # Drop the 'domain_name' column if it exists
         if 'domain_name' in input_data.columns:
             input_data = input_data.drop('domain_name', axis=1)

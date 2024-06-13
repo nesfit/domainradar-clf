@@ -210,6 +210,12 @@ class Preprocessor:
 
         feature_names = features.columns
 
+        ## Ensure all features are numeric
+        for col in features.columns:
+            if not np.issubdtype(features[col].dtype, np.number):
+                #print(f"Non-numeric column detected: {col}, converting to -1.")
+                features[col] = -1
+
         # Convert to PyTorch tensor, handling errors and printing problematic rows
         try:
             tensor_features = torch.tensor(features.values).float()
@@ -220,8 +226,9 @@ class Preprocessor:
                 except TypeError:
                     problematic_value = row.values
                     domain_name = domain_names[i] if domain_names is not None else 'N/A'
-                    print(f"Error converting row with domain name: {domain_name}")
-                    print(f"Problematic value: {problematic_value}")
+                    #print(f"Error converting row with domain name: {domain_name}")
+                    #print(f"Problematic value: {problematic_value}")
+                    
                     # Fill problematic values with -1
                     row.fillna(-1, inplace=True)
             # Retry conversion after handling problematic rows

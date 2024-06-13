@@ -9,6 +9,7 @@ import os
 import shap
 import joblib
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from pandas.core.dtypes import common as com
 
