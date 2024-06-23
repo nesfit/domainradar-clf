@@ -144,6 +144,6 @@ class Clf_phishing_cnn:
 
         with torch.no_grad():
             outputs = self.model(data_tensor_reshaped)
-            outputs_cpu = outputs.cpu().numpy()
+            outputs_cpu = torch.sigmoid(outputs).round().cpu().numpy()
 
         return outputs_cpu
