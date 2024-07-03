@@ -101,10 +101,11 @@ class Pipeline:
         and statistical properties of the domain features.
         """
 
+        # Make prediction with the decision-making NN
         badness_probability = self.clf_decision_nn.classify(pd.DataFrame([domain_stats]))[0]
 
         # Heuristics
-        if not (domain_stats["phishing_avg"] > 0.8 and domain_stats["malware_avg"] > 0.8):
+        if not (domain_stats["phishing_avg"] > 0.75 and domain_stats["malware_avg"] > 0.75):
             badness_probability -= 0.1
         elif domain_stats["phishing_avg"] > 0.8 and domain_stats["malware_avg"] > 0.8:
             badness_probability += 0.1
