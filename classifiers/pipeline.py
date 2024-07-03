@@ -217,7 +217,7 @@ class Pipeline:
                     "details": {
                         **{
                             "_DGA binary Deep NN classifier": str(round(stats["dga_binary_deepnn_result"] * 100, 2)) + "%",
-                            "_DGA binary LigtGBM classifier": str(round(stats["dga_binary_lgbm_result"] * 100, 2)) + "%",
+                            "_DGA binary LightGBM classifier": str(round(stats["dga_binary_lgbm_result"] * 100, 2)) + "%",
                         },
                         **dga_family_details
                     }
