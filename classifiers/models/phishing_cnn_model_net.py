@@ -21,8 +21,6 @@ class Net(nn.Module):
         self.dropout1 = nn.Dropout(0.01)
         self.dropout2 = nn.Dropout(0.01)
 
-        print("CNN model created")
-
     def forward(self, x):
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))

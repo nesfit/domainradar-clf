@@ -22,6 +22,7 @@ from .Clf_malware_xgboost import Clf_malware_xgboost
 from .Clf_dga_binary_nn import Clf_dga_binary_nn
 from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
 from .Clf_decision_nn import Clf_decision_nn
+from .Clf_malware_residual import Clf_malware_residual
 
 
 class Pipeline:
@@ -51,7 +52,9 @@ class Pipeline:
         self.clf_decision_nn = Clf_decision_nn(options)
 
         self.clf_malware_cnn = Clf_malware_cnn(options)
-        self.clf_malware_gru = Clf_malware_gru(options)
+        self.clf_malware_deep = Clf_malware_deep(options)
+        # self.clf_malware_gru = Clf_malware_gru(options)
+        self.clf_malware_residual = Clf_malware_residual(options)
 
         # Suppress FutureWarning
         warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -457,10 +460,22 @@ class Pipeline:
         stats["phishing_rdap_nn_result"] = self.clf_phishing_rdap_nn.classify(df)
 
         # Malware
-        stats["malware_cnn_result"] = self.clf_malware_cnn.classify(ndf_malware).astype(
-            float
-        )
+        stats["malware_cnn_result"] = self.clf_malware_cnn.classify(df)
+        stats["malware_residual_result"] = self.clf_malware_residual.classify(df)
+        stats["malware_deep_result"] = self.clf_malware_deep.classify(df)
         # stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
+
+        for i in range(len(stats)):
+            print("Domain name: ", stats["domain_name"][i])
+            print("Malware residual result: ", float(stats["malware_cnn_result"][i]))
+            print("Malware deep result: ", float(stats["malware_residual_result"][i]))
+            print("Malware cnn result: ", float(stats["malware_deep_result"][i]))
+            input("Press enter for next domain")
+
+        input(
+            "Press enter, aggregation model will fail, there is more features, new is in progress"
+        )
+
         stats["malware_lgbm_result"] = self.clf_malware_lgbm.classify(df)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
 
