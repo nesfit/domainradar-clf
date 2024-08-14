@@ -15,6 +15,8 @@ from .Clf_phishing_xgboost import Clf_phishing_xgboost
 from .Clf_phishing_dns_nn import Clf_phishing_dns_nn
 from .Clf_phishing_rdap_nn import Clf_phishing_rdap_nn
 from .Clf_malware_cnn import Clf_malware_cnn
+from .Clf_malware_gru import Clf_malware_gru
+from .Clf_malware_deep import Clf_malware_deep
 from .Clf_malware_lgbm import Clf_malware_lgbm
 from .Clf_malware_xgboost import Clf_malware_xgboost
 from .Clf_dga_binary_nn import Clf_dga_binary_nn
@@ -47,6 +49,9 @@ class Pipeline:
         self.clf_dga_binary_nn = Clf_dga_binary_nn(options)
         self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm(options)
         self.clf_decision_nn = Clf_decision_nn(options)
+
+        self.clf_malware_cnn = Clf_malware_cnn(options)
+        self.clf_malware_gru = Clf_malware_gru(options)
 
         # Suppress FutureWarning
         warnings.simplefilter(action="ignore", category=FutureWarning)
