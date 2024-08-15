@@ -53,7 +53,7 @@ class Pipeline:
 
         self.clf_malware_cnn = Clf_malware_cnn(options)
         self.clf_malware_deep = Clf_malware_deep(options)
-        # self.clf_malware_gru = Clf_malware_gru(options)
+        self.clf_malware_gru = Clf_malware_gru(options)
         self.clf_malware_residual = Clf_malware_residual(options)
 
         # Suppress FutureWarning
@@ -463,6 +463,7 @@ class Pipeline:
         stats["malware_cnn_result"] = self.clf_malware_cnn.classify(df)
         stats["malware_residual_result"] = self.clf_malware_residual.classify(df)
         stats["malware_deep_result"] = self.clf_malware_deep.classify(df)
+        # stats["malware_gru_result"] = self.clf_malware_gru.classify(df)
         # stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(ndf_malware)
 
         for i in range(len(stats)):
@@ -470,6 +471,7 @@ class Pipeline:
             print("Malware residual result: ", float(stats["malware_cnn_result"][i]))
             print("Malware deep result: ", float(stats["malware_residual_result"][i]))
             print("Malware cnn result: ", float(stats["malware_deep_result"][i]))
+            # print("Malware gru result: ", float(stats["malware_gru_result"][i]))
             input("Press enter for next domain")
 
         input(
