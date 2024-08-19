@@ -23,10 +23,17 @@ from .Clf_malware_dns_nn import Clf_malware_dns_nn
 from .Clf_malware_rdap_nn import Clf_malware_rdap_nn
 from .Clf_malware_geo_nn import Clf_malware_geo_nn
 from .Clf_malware_ip_nn import Clf_malware_ip_nn
+
+from .Clf_malware_residual import Clf_malware_residual
+from .Clf_malware_cnn import Clf_malware_cnn
+from .Clf_malware_gru import Clf_malware_gru
+from .Clf_malware_deep import Clf_malware_deep
+
 from .Clf_dga_binary_nn import Clf_dga_binary_nn
 from .Clf_dga_binary_lgbm import Clf_dga_binary_lgbm
 from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
 from .Clf_decision_nn import Clf_decision_nn
+
 
 
 class Pipeline:
@@ -58,6 +65,12 @@ class Pipeline:
         self.clf_malware_rdap_nn = Clf_malware_rdap_nn(options)
         self.clf_malware_geo_nn = Clf_malware_geo_nn(options)
         self.clf_malware_ip_nn = Clf_malware_ip_nn(options)
+
+        self.clf_malware_cnn = Clf_malware_cnn(options)
+        self.clf_malware_deep = Clf_malware_deep(options)
+        self.clf_malware_residual = Clf_malware_residual(options)
+        self.clf_malware_gru = Clf_malware_gru(options)
+
         self.clf_dga_binary_nn = Clf_dga_binary_nn(options)
         self.clf_dga_binary_lgbm = Clf_dga_binary_lgbm(options)
         self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm(options)
@@ -423,6 +436,11 @@ class Pipeline:
         stats["malware_geo_nn_result"] = self.clf_malware_geo_nn.classify(df)
         stats["malware_ip_nn_result"] = self.clf_malware_ip_nn.classify(df)
 
+        stats["malware_residual_result"] = self.clf_malware_residual.classify(df)
+        stats["malware_cnn_result"] = self.clf_malware_cnn.classify(df)
+        stats["malware_gru_result"] = self.clf_malware_gru.classify(df)
+        stats["malware_deep_result"] = self.clf_malware_deep.classify(df)
+
         # DGA
         stats["dga_binary_deepnn_result"] = self.clf_dga_binary_nn.classify(df)
         stats["dga_binary_lgbm_result"] = self.clf_dga_binary_lgbm.classify(df)
@@ -509,6 +527,17 @@ class Pipeline:
 
         # Perform classifications
         self.run_classifiers(df, stats)
+
+        # Drop columns from dataframe
+        stats.drop(
+            columns=[
+                "malware_residual_result",
+                "malware_cnn_result",
+                "malware_gru_result",
+                "malware_deep_result",
+            ],
+            inplace=True,
+        )
 
         # Calculate the overall badness probability
         stats["badness_probability"] = stats.apply(
