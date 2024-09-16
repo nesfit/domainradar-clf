@@ -17,6 +17,7 @@ from .Clf_phishing_dns_nn import Clf_phishing_dns_nn
 from .Clf_phishing_rdap_nn import Clf_phishing_rdap_nn
 from .Clf_phishing_geo_nn import Clf_phishing_geo_nn
 from .Clf_phishing_ip_nn import Clf_phishing_ip_nn
+from .Clf_phishing_html_lgbm import Clf_phishing_html_lgbm
 from .Clf_malware_lgbm import Clf_malware_lgbm
 from .Clf_malware_xgboost import Clf_malware_xgboost
 from .Clf_malware_deepnn import Clf_malware_deepnn
@@ -51,6 +52,7 @@ class Pipeline:
         self.clf_phishing_rdap_nn = Clf_phishing_rdap_nn(options)
         self.clf_phishing_geo_nn = Clf_phishing_geo_nn(options)
         self.clf_phishing_ip_nn = Clf_phishing_ip_nn(options)
+        self.clf_phishing_html_lgbm = Clf_phishing_html_lgbm(options)
         #self.clf_malware_cnn = Clf_malware_cnn(options) # temporarily disabled
         self.clf_malware_lgbm = Clf_malware_lgbm(options)
         self.clf_malware_xgboost = Clf_malware_xgboost(options)
@@ -101,8 +103,13 @@ class Pipeline:
         and statistical properties of the domain features.
         """
 
+        # Use a copy and ignore columns that are not used
+        # in the decision-making model (e.g., html-based classifiers)
+        working_stats = domain_stats.copy()
+        working_stats.drop("phishing_html_lgbm_result", inplace=True)
+
         # Make prediction with the decision-making NN
-        badness_probability = self.clf_decision_nn.classify(pd.DataFrame([domain_stats]))[0]
+        badness_probability = self.clf_decision_nn.classify(pd.DataFrame([working_stats]))[0]
 
         # Heuristics
         if not (domain_stats["phishing_avg"] > 0.75 and domain_stats["malware_avg"] > 0.75):
@@ -331,6 +338,7 @@ class Pipeline:
         stats["phishing_rdap_nn_result"] = self.clf_phishing_rdap_nn.classify(df)
         stats["phishing_geo_nn_result"] = self.clf_phishing_geo_nn.classify(df)
         stats["phishing_ip_nn_result"] = self.clf_phishing_ip_nn.classify(df)
+        stats["phishing_html_lgbm_result"] = self.clf_phishing_html_lgbm.classify(df)
 
         # Malware
         #stats["malware_cnn_result"] = self.clf_malware_cnn.classify(ndf_malware).astype(float) # temporarily disabled

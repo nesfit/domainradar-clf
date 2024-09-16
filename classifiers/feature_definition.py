@@ -60,4 +60,11 @@ features_in_expected_order = ['domain_name', 'dns_has_dnskey', 'dns_A_count', 'd
                               'rdap_ip_longest_v4_prefix_len', 'rdap_ip_shortest_v6_prefix_len',
                               'rdap_ip_longest_v6_prefix_len', 'rdap_ip_avg_admin_name_len',
                               'rdap_ip_avg_admin_name_entropy',
-                              'rdap_ip_avg_admin_email_len', 'rdap_ip_avg_admin_email_entropy']
+                              'rdap_ip_avg_admin_email_len', 'rdap_ip_avg_admin_email_entropy',
+                              
+                              "html_createElement","html_write","html_charCodeAt","html_concat","html_escape","html_eval","html_exec","html_fromCharCode","html_link","html_parseInt","html_replace","html_search","html_substring","html_unescape","html_addEventListener","html_setInterval","html_setTimeout","html_push",
+                              "html_indexOf","html_documentWrite","html_get","html_find","html_documentCreateElement","html_windowSetTimeout","html_windowSetInterval",
+                              "html_hexEncoding","html_unicodeEncoding","html_longVariableName","html_entropy","html_AllWords","html_UniqueWords","html_AverageWordLength",
+                              "html_AllLines","html_AllTags","html_AllParagraphs","html_divs","html_titles","html_externalJavaScripts","html_links","html_scripts","html_scriptsAsync","html_scriptsType","html_anchores","html_anchoresToHash","html_anchoresToHttps","html_anchoresToCom","html_inputs",
+                              "html_inputPassword","html_hiddenElements","html_inputHidden","html_objects","html_embeds","html_frame","html_iframe","html_iframeSrc","html_iframeSrcHttps","html_center","html_imgs","html_imgsSrc","html_meta","html_linksHref","html_linksHrefHttps","html_linksHrefCss","html_linksType","html_linkTypeApp","html_linkRel","html_allHrefs","html_formAction","html_formHttp","html_strong","html_noHrefs","html_internalHrefRatio","html_internalHrefs",
+                              "html_externalHrefRatio","html_externalHref","html_icon","html_iconExternal","html_formPhp","html_formHash","html_formjavascript","html_maliciousForm","html_mostCommon","html_cssInternal","html_cssExternal","html_anchoresToContent","html_anchoresToVoid","html_blankSpaces","html_blocked_keywords_label"]
