@@ -29,7 +29,7 @@ from .Clf_dga_binary_nn import Clf_dga_binary_nn
 from .Clf_dga_binary_lgbm import Clf_dga_binary_lgbm
 from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
 from .Clf_decision_nn import Clf_decision_nn
-
+from .Clf_malware_html_lgbm import Clf_malware_html_lgbm
 
 class Pipeline:
     def __init__(self, options: PipelineOptions | None = None):
@@ -53,6 +53,7 @@ class Pipeline:
         self.clf_phishing_geo_nn = Clf_phishing_geo_nn(options)
         self.clf_phishing_ip_nn = Clf_phishing_ip_nn(options)
         self.clf_phishing_html_lgbm = Clf_phishing_html_lgbm(options)
+        self.clf_malware_html_lgbm = Clf_malware_html_lgbm(options)
         #self.clf_malware_cnn = Clf_malware_cnn(options) # temporarily disabled
         self.clf_malware_lgbm = Clf_malware_lgbm(options)
         self.clf_malware_xgboost = Clf_malware_xgboost(options)
@@ -107,6 +108,7 @@ class Pipeline:
         # in the decision-making model (e.g., html-based classifiers)
         working_stats = domain_stats.copy()
         working_stats.drop("phishing_html_lgbm_result", inplace=True)
+        working_stats.drop("malware_html_lgbm_result", inplace=True)
 
         # Make prediction with the decision-making NN
         badness_probability = self.clf_decision_nn.classify(pd.DataFrame([working_stats]))[0]
@@ -339,6 +341,7 @@ class Pipeline:
         stats["phishing_geo_nn_result"] = self.clf_phishing_geo_nn.classify(df)
         stats["phishing_ip_nn_result"] = self.clf_phishing_ip_nn.classify(df)
         stats["phishing_html_lgbm_result"] = self.clf_phishing_html_lgbm.classify(df)
+        stats["malware_html_lgbm_result"] = self.clf_phishing_html_lgbm.classify(df)
 
         # Malware
         #stats["malware_cnn_result"] = self.clf_malware_cnn.classify(ndf_malware).astype(float) # temporarily disabled
