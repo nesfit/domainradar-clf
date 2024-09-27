@@ -341,7 +341,7 @@ class Pipeline:
         stats["phishing_geo_nn_result"] = self.clf_phishing_geo_nn.classify(df)
         stats["phishing_ip_nn_result"] = self.clf_phishing_ip_nn.classify(df)
         stats["phishing_html_lgbm_result"] = self.clf_phishing_html_lgbm.classify(df)
-        stats["malware_html_lgbm_result"] = self.clf_phishing_html_lgbm.classify(df)
+        
 
         # Malware
         #stats["malware_cnn_result"] = self.clf_malware_cnn.classify(ndf_malware).astype(float) # temporarily disabled
@@ -352,6 +352,7 @@ class Pipeline:
         stats["malware_rdap_nn_result"] = self.clf_malware_rdap_nn.classify(df)
         stats["malware_geo_nn_result"] = self.clf_malware_geo_nn.classify(df)
         stats["malware_ip_nn_result"] = self.clf_malware_ip_nn.classify(df)
+        stats["malware_html_lgbm_result"] = self.clf_malware_html_lgbm.classify(df)
 
         # DGA
         stats["dga_binary_deepnn_result"] = self.clf_dga_binary_nn.classify(df)

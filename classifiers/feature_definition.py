@@ -62,9 +62,16 @@ features_in_expected_order = ['domain_name', 'dns_has_dnskey', 'dns_A_count', 'd
                               'rdap_ip_avg_admin_name_entropy',
                               'rdap_ip_avg_admin_email_len', 'rdap_ip_avg_admin_email_entropy',
                               
-                              "html_createElement","html_write","html_charCodeAt","html_concat","html_escape","html_eval","html_exec","html_fromCharCode","html_link","html_parseInt","html_replace","html_search","html_substring","html_unescape","html_addEventListener","html_setInterval","html_setTimeout","html_push",
-                              "html_indexOf","html_documentWrite","html_get","html_find","html_documentCreateElement","html_windowSetTimeout","html_windowSetInterval",
-                              "html_hexEncoding","html_unicodeEncoding","html_longVariableName","html_entropy","html_AllWords","html_UniqueWords","html_AverageWordLength",
-                              "html_AllLines","html_AllTags","html_AllParagraphs","html_divs","html_titles","html_externalJavaScripts","html_links","html_scripts","html_scriptsAsync","html_scriptsType","html_anchores","html_anchoresToHash","html_anchoresToHttps","html_anchoresToCom","html_inputs",
-                              "html_inputPassword","html_hiddenElements","html_inputHidden","html_objects","html_embeds","html_frame","html_iframe","html_iframeSrc","html_iframeSrcHttps","html_center","html_imgs","html_imgsSrc","html_meta","html_linksHref","html_linksHrefHttps","html_linksHrefCss","html_linksType","html_linkTypeApp","html_linkRel","html_allHrefs","html_formAction","html_formHttp","html_strong","html_noHrefs","html_internalHrefRatio","html_internalHrefs",
-                              "html_externalHrefRatio","html_externalHref","html_icon","html_iconExternal","html_formPhp","html_formHash","html_formjavascript","html_maliciousForm","html_mostCommon","html_cssInternal","html_cssExternal","html_anchoresToContent","html_anchoresToVoid","html_blankSpaces","html_blocked_keywords_label"]
+                               'html_create_element', 'html_write', 'html_char_code_at', 'html_concat', 'html_escape', 'html_eval', 'html_exec', 'html_from_char_code', 'html_link', 'html_parse_int', 
+                               'html_replace', 'html_search', 'html_substring', 'html_unescape', 'html_add_event_listener', 'html_set_interval', 'html_set_timeout', 'html_push', 'html_index_of', 'html_document_write', 
+                               'html_get', 'html_find', 'html_document_create_element', 'html_window_set_timeout', 'html_window_set_interval', 'html_hex_encoding', 'html_unicode_encoding', 'html_long_variable_name', 
+                                'html_num_of_words', 'html_unique_words', 'html_average_word_len', 'html_num_of_lines', 'html_num_of_tags', 'html_num_of_paragraphs', 'html_num_of_divs', 
+                               'html_num_of_titles', 'html_num_of_external_js', 'html_num_of_links', 'html_num_of_scripts', 'html_num_of_scripts_async', 'html_num_of_scripts_type',
+                                'html_num_of_anchors', 'html_num_of_anchors_to_hash', 'html_num_of_anchors_to_https', 'html_num_of_anchors_to_com', 'html_num_of_inputs', 'html_num_of_input_password', 
+                                'html_num_of_hidden_elements', 'html_num_of_input_hidden', 'html_num_of_objects', 'html_num_of_embeds', 'html_num_of_frame', 'html_num_of_iframe', 'html_num_of_iframe_src', 
+                                'html_num_of_iframe_src_https', 'html_num_of_center', 'html_num_of_imgs', 'html_num_of_imgs_src', 'html_num_of_meta', 'html_num_of_links_href', 'html_num_of_links_href_https', 
+                                'html_num_of_links_href_css', 'html_num_of_links_type', 'html_num_of_link_type_app', 'html_num_of_link_rel', 'html_num_of_all_hrefs', 'html_num_of_form_action', 'html_num_of_form_http', 
+                                'html_num_of_strong', 'html_no_hrefs', 'html_internal_href_ratio', 'html_num_of_internal_hrefs', 'html_external_href_ratio', 'html_num_of_external_href', 'html_num_of_icon', 
+                                'html_icon_external', 'html_num_of_form_php', 'html_num_of_form_hash', 'html_num_of_form_js', 'html_malicious_form', 'html_most_common', 'html_num_of_css_internal', 
+                                'html_num_of_css_external', 'html_num_of_anchors_to_content', 'html_num_of_anchors_to_void', 'html_num_of_blank_spaces', 'html_blocked_keywords_label'
+                              ]
