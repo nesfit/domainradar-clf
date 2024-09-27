@@ -199,7 +199,8 @@ class Pipeline:
                         "DNS-based NN phishing classifier": str(round(stats["phishing_dns_nn_result"] * 100, 2)) + "%",
                         "RDAP-based NN phishing classifier": str(round(stats["phishing_rdap_nn_result"] * 100, 2)) + "%",
                         "Geolocation NN phishing classifier": str(round(stats["phishing_geo_nn_result"] * 100, 2)) + "%",
-                        "IP-based NN phishing classifier": str(round(stats["phishing_ip_nn_result"] * 100, 2)) + "%"
+                        "IP-based NN phishing classifier": str(round(stats["phishing_ip_nn_result"] * 100, 2)) + "%",
+                        "HTML-based phishing classifier": str(round(stats["phishing_html_lgbm_result"] * 100, 2)) + "%"
                     }
                 },
                 {
@@ -215,7 +216,8 @@ class Pipeline:
                         "DNS-based NN malware classifier": str(round(stats["malware_dns_nn_result"] * 100, 2)) + "%",
                         "RDAP-based NN malware classifier": str(round(stats["malware_rdap_nn_result"] * 100, 2)) + "%",
                         "Geolocation NN malware classifier": str(round(stats["malware_geo_nn_result"] * 100, 2)) + "%",
-                        "IP-based NN malware classifier": str(round(stats["malware_ip_nn_result"] * 100, 2)) + "%"
+                        "IP-based NN malware classifier": str(round(stats["malware_ip_nn_result"] * 100, 2)) + "%",
+                        "HTML-based malware classifier": str(round(stats["malware_html_lgbm_result"] * 100, 2)) + "%"
                     }
                 },
                 {
