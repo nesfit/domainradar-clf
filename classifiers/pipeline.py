@@ -24,6 +24,12 @@ from .Clf_malware_dns_nn import Clf_malware_dns_nn
 from .Clf_malware_rdap_nn import Clf_malware_rdap_nn
 from .Clf_malware_geo_nn import Clf_malware_geo_nn
 from .Clf_malware_ip_nn import Clf_malware_ip_nn
+
+from .Clf_malware_residual import Clf_malware_residual
+from .Clf_malware_cnn import Clf_malware_cnn
+from .Clf_malware_gru import Clf_malware_gru
+from .Clf_malware_deep import Clf_malware_deep
+
 from .Clf_dga_binary_nn import Clf_dga_binary_nn
 from .Clf_dga_binary_lgbm import Clf_dga_binary_lgbm
 from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
@@ -55,6 +61,7 @@ classifier_ids = {
 }
 
 
+
 class Pipeline:
 
     def __init__(self, options: PipelineOptions | None = None):
@@ -77,9 +84,10 @@ class Pipeline:
         self.clf_phishing_rdap_nn = Clf_phishing_rdap_nn(options)
         self.clf_phishing_geo_nn = Clf_phishing_geo_nn(options)
         self.clf_phishing_ip_nn = Clf_phishing_ip_nn(options)
-        # self.clf_malware_cnn = Clf_malware_cnn(options) # temporarily disabled
+        
         self.clf_phishing_html_lgbm = Clf_phishing_html_lgbm(options)
         self.clf_malware_html_lgbm = Clf_malware_html_lgbm(options)
+
         self.clf_malware_lgbm = Clf_malware_lgbm(options)
         self.clf_malware_xgboost = Clf_malware_xgboost(options)
         self.clf_malware_deepnn = Clf_malware_deepnn(options)
@@ -87,41 +95,56 @@ class Pipeline:
         self.clf_malware_rdap_nn = Clf_malware_rdap_nn(options)
         self.clf_malware_geo_nn = Clf_malware_geo_nn(options)
         self.clf_malware_ip_nn = Clf_malware_ip_nn(options)
+
+        self.clf_malware_cnn = Clf_malware_cnn(options)
+        self.clf_malware_deep = Clf_malware_deep(options)
+        self.clf_malware_residual = Clf_malware_residual(options)
+        self.clf_malware_gru = Clf_malware_gru(options)
+
         self.clf_dga_binary_nn = Clf_dga_binary_nn(options)
         self.clf_dga_binary_lgbm = Clf_dga_binary_lgbm(options)
         self.clf_dga_multiclass_lgbm = Clf_dga_multiclass_lgbm(options)
         self.clf_decision_nn = Clf_decision_nn(options)
 
         # Suppress FutureWarning
-        warnings.simplefilter(action='ignore', category=FutureWarning)
+        warnings.simplefilter(action="ignore", category=FutureWarning)
 
     def feature_statistics(self, domain_data: pd.DataFrame) -> pd.DataFrame:
         """
         Calculates feature statistics for the domain data.
         """
         # Define the prefixes
-        prefixes = ['dns_', 'tls_', 'ip_', 'rdap_', 'geo_']  # lex_ is always present
+        prefixes = ["dns_", "tls_", "ip_", "rdap_", "geo_"]  # lex_ is always present
 
         # Initialize a DataFrame with domain names only
-        stats = domain_data[['domain_name']].copy()
+        stats = domain_data[["domain_name"]].copy()
 
         # Iterate through each prefix to calculate the required ratios
         for prefix in prefixes:
             # Filter columns with the current prefix
-            prefixed_columns = [col for col in domain_data.columns if col.startswith(prefix)]
+            prefixed_columns = [
+                col for col in domain_data.columns if col.startswith(prefix)
+            ]
 
             if prefixed_columns:
                 # Calculate the availability ratio (non-NaN and non -1 values)
-                stats[f'{prefix}available'] = domain_data[prefixed_columns].applymap(
-                    lambda x: x != -1 and pd.notna(x)).mean(axis=1)
+
+                stats[f"{prefix}available"] = (
+                    domain_data[prefixed_columns]
+                    .applymap(lambda x: x != -1 and pd.notna(x))
+                    .mean(axis=1)
+                )
 
                 # Calculate the nonzero ratio (non-zero values, treating NaN and -1 as zero)
-                stats[f'{prefix}nonzero'] = domain_data[prefixed_columns].applymap(
-                    lambda x: x != 0 and x != -1 and pd.notna(x)).mean(axis=1)
+                stats[f"{prefix}nonzero"] = (
+                    domain_data[prefixed_columns]
+                    .applymap(lambda x: x != 0 and x != -1 and pd.notna(x))
+                    .mean(axis=1)
+                )
             else:
                 # If no columns with the current prefix exist, set ratios to 0
-                stats[f'{prefix}available'] = 0
-                stats[f'{prefix}nonzero'] = 0
+                stats[f"{prefix}available"] = 0
+                stats[f"{prefix}nonzero"] = 0
 
         return stats
 
@@ -138,16 +161,23 @@ class Pipeline:
         working_stats.drop("malware_html_lgbm_result", inplace=True)
 
         # Make prediction with the decision-making NN
-        badness_probability = self.clf_decision_nn.classify(pd.DataFrame([working_stats]))[0]
+        badness_probability = self.clf_decision_nn.classify(
+            pd.DataFrame([domain_stats])
+        )[0]
 
         # Heuristics
-        if not (domain_stats["phishing_avg"] > 0.75 and domain_stats["malware_avg"] > 0.75):
+        if not (
+            domain_stats["phishing_avg"] > 0.75 and domain_stats["malware_avg"] > 0.75
+        ):
             badness_probability -= 0.1
         elif domain_stats["phishing_avg"] > 0.8 and domain_stats["malware_avg"] > 0.8:
             badness_probability += 0.1
 
-        if not (domain_stats["phishing_avg"] > 0.5 and domain_stats["malware_avg"] > 0.5) or \
-                (domain_stats["malware_avg"] > 0.5 and domain_stats["dga_binary_avg"] > 0.5):
+        if not (
+            domain_stats["phishing_avg"] > 0.5 and domain_stats["malware_avg"] > 0.5
+        ) or (
+            domain_stats["malware_avg"] > 0.5 and domain_stats["dga_binary_avg"] > 0.5
+        ):
             badness_probability -= 0.1
 
         if badness_probability < 0.0:
@@ -255,14 +285,16 @@ class Pipeline:
                             classifier_ids["DGA Binary NN"]: stats["dga_binary_deepnn_result"],
                             classifier_ids["DGA Binary LightGBM"]: stats["dga_binary_lgbm_result"],
                         },
-                        **dga_family_details
-                    }
-                }
-            ]
+                        **dga_family_details,
+                    },
+                },
+            ],
         }
         return result
 
-    def generate_preliminary_results(self, df: pd.DataFrame, output_file: str = None, add_final=False) -> pd.DataFrame:
+    def generate_preliminary_results(
+        self, df: pd.DataFrame, output_file: str = None, add_final=False
+    ) -> pd.DataFrame:
         """
         This method is used to generate preliminary results for training and testing
         the final aggregation model. The parquet contains domain name, label, feature
@@ -279,7 +311,9 @@ class Pipeline:
 
         if add_final:
             # Calculate the overall badness probability
-            stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
+            stats["badness_probability"] = stats.apply(
+                self.calculate_badness_probability, axis=1
+            )
 
         # Add the label to the statistics (if present in the input DataFrame)
         # It is used for training the final aggregation model
@@ -289,7 +323,9 @@ class Pipeline:
         # If an output file path is provided, save the DataFrame as a Parquet file
         if output_file:
             if importlib.util.find_spec("pyarrow") is None:
-                warnings.warn("The pyarrow library is not installed. Run `poetry install --with dev`.")
+                warnings.warn(
+                    "The pyarrow library is not installed. Run `poetry install --with dev`."
+                )
                 return stats
 
             import pyarrow.parquet as pq
@@ -300,13 +336,18 @@ class Pipeline:
 
         return stats
 
-    def dump_ndf(self, df: pd.DataFrame, classifier_type: str, output_filename=False) -> list[dict]:
+    def dump_ndf(
+        self, df: pd.DataFrame, classifier_type: str, output_filename=False
+    ) -> list[dict]:
         """
         Creates an NDF representation of the input data and stores it as a file.
         """
-
-        if classifier_type != "phishing" and classifier_type != "malware" and \
-                classifier_type != "dga_binary" and classifier_type != "dga_multiclass":
+        if (
+            classifier_type != "phishing"
+            and classifier_type != "malware"
+            and classifier_type != "dga_binary"
+            and classifier_type != "dga_multiclass"
+        ):
             raise ValueError("Invalid classifier type")
 
         # Shuffle the feature vector to the order in which it was used in training
@@ -320,7 +361,10 @@ class Pipeline:
 
         return ndf
 
-    def debug_domain(self, domain_name: str, df: pd.DataFrame, n_top_features: int = 10):
+
+    def debug_domain(
+        self, domain_name: str, df: pd.DataFrame, n_top_features: int = 10
+    ):
         """
         Debugs a single domain name by showing the most important features for decision
         """
@@ -337,7 +381,9 @@ class Pipeline:
 
         return {
             # "phishing_cnn": self.clf_phishing_cnn.debug_domain(domain_name, ndf_phishing, n_top_features),
-            "phishing_lgbm": self.clf_phishing_lgbm.debug_domain(domain_name, df, n_top_features)
+            "phishing_lgbm": self.clf_phishing_lgbm.debug_domain(
+                domain_name, df, n_top_features
+            )
             # TODO: Add explanations for other classifiers
         }
 
@@ -379,6 +425,11 @@ class Pipeline:
         stats["malware_ip_nn_result"] = self.clf_malware_ip_nn.classify(df)
         stats["malware_html_lgbm_result"] = self.clf_malware_html_lgbm.classify(df)
 
+        stats["malware_residual_result"] = self.clf_malware_residual.classify(df)
+        stats["malware_cnn_result"] = self.clf_malware_cnn.classify(df)
+        stats["malware_gru_result"] = self.clf_malware_gru.classify(df)
+        stats["malware_deep_result"] = self.clf_malware_deep.classify(df)
+
         # DGA
         stats["dga_binary_deepnn_result"] = self.clf_dga_binary_nn.classify(df)
         stats["dga_binary_lgbm_result"] = self.clf_dga_binary_lgbm.classify(df)
@@ -415,16 +466,27 @@ class Pipeline:
             stats["dga_binary_prod"] *= stats[key]
 
         # Calculate total derived statistics
-        stats["total_sum"] = stats["phishing_sum"] + stats["malware_sum"] + stats["dga_binary_sum"]
+        stats["total_sum"] = (
+            stats["phishing_sum"] + stats["malware_sum"] + stats["dga_binary_sum"]
+        )
         stats["total_avg"] = stats["total_sum"] / (
-                no_phishing_classifiers + no_malware_classifiers + no_dga_binary_classifiers)
-        stats["total_prod"] = stats["phishing_prod"] * stats["malware_prod"] * stats["dga_binary_prod"]
+            no_phishing_classifiers + no_malware_classifiers + no_dga_binary_classifiers
+        )
+        stats["total_prod"] = (
+            stats["phishing_prod"] * stats["malware_prod"] * stats["dga_binary_prod"]
+        )
 
         """
         no_phishing_classifiers = 6
         no_malware_classifiers = 3
-        stats["phishing_sum"] = stats["phishing_cnn_result"] + stats["phishing_lgbm_result"] + \
-            stats["phishing_xgboost_result"] + stats["phishing_deepnn_result"] + stats["phishing_dns_nn_result"] + stats["phishing_rdap_nn_result"]
+        stats["phishing_sum"] = (
+            stats["phishing_cnn_result"]
+            + stats["phishing_lgbm_result"]
+            + stats["phishing_xgboost_result"]
+            + stats["phishing_deepnn_result"]
+            + stats["phishing_dns_nn_result"]
+            + stats["phishing_rdap_nn_result"]
+        )
         stats["phishing_avg"] = stats["phishing_sum"] / no_phishing_classifiers
         stats["phishing_prod"] = stats["phishing_cnn_result"] * stats["phishing_lgbm_result"] * \
             stats["phishing_xgboost_result"] * stats["phishing_deepnn_result"] * \
@@ -443,7 +505,7 @@ class Pipeline:
         """
         Classifies the domains from a pandas df and returns list the results.
         Each row of the input DF is a single domain, represented by a column  domain_name
-        and 
+        and
         """
 
         # Rearrange the feature vector to the order in which it was used in training
@@ -455,8 +517,21 @@ class Pipeline:
         # Perform classifications
         self.run_classifiers(df, stats)
 
+        # Drop columns from dataframe
+        stats.drop(
+            columns=[
+                "malware_residual_result",
+                "malware_cnn_result",
+                "malware_gru_result",
+                "malware_deep_result",
+            ],
+            inplace=True,
+        )
+
         # Calculate the overall badness probability
-        stats["badness_probability"] = stats.apply(self.calculate_badness_probability, axis=1)
+        stats["badness_probability"] = stats.apply(
+            self.calculate_badness_probability, axis=1
+        )
 
         # DGA Families
         stats["dga_families"] = self.clf_dga_multiclass_lgbm.classify(df)
@@ -466,6 +541,8 @@ class Pipeline:
         # print("=====================================")
 
         # Create an array of results
-        results = stats.apply(lambda domain_stats: self.generate_result(domain_stats), axis=1).tolist()
+        results = stats.apply(
+            lambda domain_stats: self.generate_result(domain_stats), axis=1
+        ).tolist()
 
         return results
