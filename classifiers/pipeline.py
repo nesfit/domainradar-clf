@@ -26,6 +26,7 @@ from .Clf_dga_multiclass_lgbm import Clf_dga_multiclass_lgbm
 from .Clf_decision_nn import Clf_decision_nn
 from .Clf_malware_html_lgbm import Clf_malware_html_lgbm
 
+
 classifier_ids = {
     "Phishing CNN": 1,
     "Phishing LightGBM": 2,
@@ -246,14 +247,14 @@ class Pipeline:
 
         # Add HTML-based results OR display a message that the HTML-based classifiers are disabled
         if stats["phishing_html_lgbm_result"] != -1:
-            result["classification_results"]["phishing"]["details"][classifier_ids["Phishing HTML-based LightGBM"]] = stats["phishing_html_lgbm_result"]
+            result["classification_results"][0]["details"][classifier_ids["Phishing HTML-based LightGBM"]] = stats["phishing_html_lgbm_result"]
         else:
-            result["classification_results"]["phishing"]["description"] += "\n" + "No HTML code scraped -> HTML-based classifiers disabled."
+            result["classification_results"][0]["description"] += "\n" + "No HTML code scraped -> HTML-based classifiers disabled."
         
         if stats["malware_html_lgbm_result"] != -1:
-            result["classification_results"]["malware"]["details"][classifier_ids["Malware HTML-based LightGBM"]] = stats["malware_html_lgbm_result"]
+            result["classification_results"][1]["details"][classifier_ids["Malware HTML-based LightGBM"]] = stats["malware_html_lgbm_result"]
         else:
-            result["classification_results"]["malware"]["description"] += "\n" + "No HTML code scraped -> HTML-based classifiers disabled."
+            result["classification_results"][1]["description"] += "\n" + "No HTML code scraped -> HTML-based classifiers disabled."
 
         return result
 
@@ -437,17 +438,6 @@ class Pipeline:
 
         # Perform classifications
         self.run_classifiers(df, stats)
-
-        # Drop columns from dataframe
-        stats.drop(
-            columns=[
-                "malware_residual_result",
-                "malware_cnn_result",
-                "malware_gru_result",
-                "malware_deep_result",
-            ],
-            inplace=True,
-        )
 
         # Calculate the overall badness probability
         stats["badness_probability"] = stats.apply(

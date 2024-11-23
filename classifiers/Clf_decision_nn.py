@@ -42,7 +42,7 @@ class Clf_decision_nn:
 
         # Get the number of features expected by the model
         # self.expected_feature_size = self.model.n_features_
-        self.expected_feature_size = 39
+        self.expected_feature_size = 38
 
     def cast_timestamp(self, df: DataFrame):
         """
