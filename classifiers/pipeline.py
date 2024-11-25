@@ -80,7 +80,8 @@ class Pipeline:
 
     def feature_statistics(self, domain_data: pd.DataFrame) -> pd.DataFrame:
         """
-        Calculates feature statistics for the domain data.
+        Calculates feature statistics for the domain data:
+        How many features of each category are available and nonzero.
         """
         # Define the prefixes
         prefixes = ["dns_", "tls_", "ip_", "rdap_", "geo_", "html_"]  # lex_ is always present
@@ -116,6 +117,7 @@ class Pipeline:
                 stats[f"{prefix}nonzero"] = 0
 
         return stats
+
 
     def calculate_badness_probability(self, domain_stats: pd.Series) -> float:
         """
@@ -153,6 +155,7 @@ class Pipeline:
             badness_probability = 1.0
 
         return badness_probability
+
 
     def generate_result(self, stats: pd.Series) -> dict:
         """
@@ -258,6 +261,7 @@ class Pipeline:
 
         return result
 
+
     def generate_preliminary_results(
         self, df: pd.DataFrame, output_file: str = None, add_final=False
     ) -> pd.DataFrame:
@@ -272,8 +276,11 @@ class Pipeline:
         # Calculate the feature statistics
         stats = self.feature_statistics(df)
 
-        # Perform classifications
-        self.run_classifiers(df, stats)
+        # Perform classifications and update stats with their results
+        stats = self.run_classifiers(df, stats)
+
+        # Calculte derived staistics (sums, averages, products)
+        stats = self.compute_all_derived_stats(stats)
 
         if add_final:
             # Calculate the overall badness probability
@@ -302,6 +309,7 @@ class Pipeline:
 
         return stats
 
+
     def dump_ndf(
         self, df: pd.DataFrame, classifier_type: str, output_filename=False
     ) -> list[dict]:
@@ -328,9 +336,7 @@ class Pipeline:
         return ndf
 
 
-    def debug_domain(
-        self, domain_name: str, df: pd.DataFrame, n_top_features: int = 10
-    ):
+    def debug_domain(self, domain_name: str, df: pd.DataFrame, n_top_features: int = 10):
         """
         Debugs a single domain name by showing the most important features for decision
         """
@@ -352,10 +358,18 @@ class Pipeline:
             )
             # TODO: Add explanations for other classifiers
         }
+    
 
     def run_classifiers(self, df: pd.DataFrame, stats: pd.DataFrame):
         """
-        Runs all classifiers on the input data (df) and stores the results in the stats DataFrame.
+        Runs all classifiers on the input data (df) and stores the results.
+
+            Args:
+                df (pd.DataFrame): Input data containing a feature vector for each domain
+                stats (pd.DataFrame): Statistics DataFrame to store classifier results
+
+            Returns:
+                Updated DataFrame with results
         """
 
         # Get individual classifiers' results
@@ -379,49 +393,96 @@ class Pipeline:
         stats["dga_binary_deepnn_result"] = self.clf_dga_binary_nn.classify(df)
         stats["dga_binary_lgbm_result"] = self.clf_dga_binary_lgbm.classify(df)
 
+
+        return stats
+    
+
+    def compute_category_derived_stats(self, keys, prefix, stats):
+        """
+        Computes derived statistics (_sum, _avg, _prod) for a given category.
+        If the classifier result is -1, the value is  ignored.
+
+        Note: as a last-resort solution for an edge-case where no classifiers were usable for a category,
+              the default value is set to 0.5.
+
+        Args:
+            keys (list): List of keys corresponding to classifier results in stats.
+            prefix (str): The prefix for the category (e.g., "phishing", "malware").
+            stats (pd.DataFrame): DataFrame containing the classifier results and derived statistics.
+
+        Returns:
+            Updated dataframe with the derived statistics.
+        """
+        # Mask valid values (exclude -1)
+        valid_mask = stats[keys] != -1
+
+        # Sum across valid values only
+        stats[f"{prefix}_sum"] = stats[keys].where(valid_mask, 0).sum(axis=1)
+
+        # Count valid values for averaging
+        valid_counts = valid_mask.sum(axis=1)
+
+        # Calculate average: sum / count, default to 0.5 if no valid values
+        stats[f"{prefix}_avg"] = stats[f"{prefix}_sum"] / valid_counts
+        stats[f"{prefix}_avg"].where(valid_counts > 0, 0.5, inplace=True)
+
+        # Calculate product of valid values, replace -1 with 1 for ignored entries
+        stats[f"{prefix}_prod"] = stats[keys].where(valid_mask, 1).prod(axis=1)
+        stats[f"{prefix}_prod"].where(valid_counts > 0, 0.5 ** len(keys), inplace=True)
+
+        return stats
+
+
+    def compute_all_derived_stats(self, stats: pd.DataFrame) -> pd.DataFrame:
+        """
+        Computes derived statistics (_sum, _avg, _prod) for:
+        * all categories (phishing_, malware_, dga_binary_)
+        * all classifiers (total_ stats)
+        Those derived statistics serve as additional inputs for the decision-making model.
+
+        If the classifier result is -1, the value is ignored.
+        
+        Note: In an edge case that some category fails to produce any results, it is
+        handled as if all the classifiers returned 0.5.
+
+        Args:
+            stats (pd.DataFrame): DataFrame containing the classifier results.
+
+        Returns:
+            Updated dataframe with the derived statistics.
+        """
         phishing_keys = [key for key in stats.keys() if key.startswith("phishing_")]
         malware_keys = [key for key in stats.keys() if key.startswith("malware_")]
         dga_binary_keys = [key for key in stats.keys() if key.startswith("dga_binary_")]
 
-        # Calculate derived statistics (additional inputs for the decision making model)
-        # Get the number of classifiers for phishing, malware, and dga_binary
-        no_phishing_classifiers = len(phishing_keys)
-        no_malware_classifiers = len(malware_keys)
-        no_dga_binary_classifiers = len(dga_binary_keys)
-
-        # Calculate derived statistics for phishing
-        stats["phishing_sum"] = sum(stats[key] for key in phishing_keys)
-        stats["phishing_avg"] = stats["phishing_sum"] / no_phishing_classifiers
-        stats["phishing_prod"] = 1
-        for key in phishing_keys:
-            stats["phishing_prod"] *= stats[key]
-
-        # Calculate derived statistics for malware
-        stats["malware_sum"] = sum(stats[key] for key in malware_keys)
-        stats["malware_avg"] = stats["malware_sum"] / no_malware_classifiers
-        stats["malware_prod"] = 1
-        for key in malware_keys:
-            stats["malware_prod"] *= stats[key]
-
-        # Calculate derived statistics for dga_binary
-        stats["dga_binary_sum"] = sum(stats[key] for key in dga_binary_keys)
-        stats["dga_binary_avg"] = stats["dga_binary_sum"] / no_dga_binary_classifiers
-        stats["dga_binary_prod"] = 1
-        for key in dga_binary_keys:
-            stats["dga_binary_prod"] *= stats[key]
+        # Calculate derived statistics (sums, averages, products) for each category
+        stats = self.compute_category_derived_stats(phishing_keys, "phishing", stats)
+        stats = self.compute_category_derived_stats(malware_keys, "malware", stats)
+        stats = self.compute_category_derived_stats(dga_binary_keys, "dga_binary", stats)
 
         # Calculate total derived statistics
         stats["total_sum"] = (
             stats["phishing_sum"] + stats["malware_sum"] + stats["dga_binary_sum"]
         )
-        stats["total_avg"] = stats["total_sum"] / (
-            no_phishing_classifiers + no_malware_classifiers + no_dga_binary_classifiers
+        total_valid_classifiers = sum(
+            stats[key].ne(-1).sum() for key in phishing_keys + malware_keys + dga_binary_keys
+        )
+
+        total_classifiers = len(phishing_keys) + len(malware_keys) + len(dga_binary_keys)
+        stats["total_avg"] = (
+            stats["total_sum"] / total_valid_classifiers if total_valid_classifiers > 0 else 0.5
         )
         stats["total_prod"] = (
             stats["phishing_prod"] * stats["malware_prod"] * stats["dga_binary_prod"]
         )
+        if total_valid_classifiers == 0:  # No valid classifiers in total
+            stats["total_prod"] = 0.5 ** total_classifiers
+
+
+        return stats
 
         # Note: DGA Multiclass is run seperately as it not used for the decision-making model
+
 
     def classify_domains(self, df: pd.DataFrame) -> list[dict]:
         """
@@ -437,14 +498,17 @@ class Pipeline:
         stats = self.feature_statistics(df)
 
         # Perform classifications
-        self.run_classifiers(df, stats)
+        stats = self.run_classifiers(df, stats)
+
+        # Calculte derived staistics (sums, averages, products)
+        stats = self.compute_all_derived_stats(stats)
 
         # Calculate the overall badness probability
         stats["badness_probability"] = stats.apply(
             self.calculate_badness_probability, axis=1
         )
 
-        # DGA Families
+        # Estimate the most probable DGA Families
         stats["dga_families"] = self.clf_dga_multiclass_lgbm.classify(df)
 
         # Create an array of results
