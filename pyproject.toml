@@ -25,7 +25,7 @@ python-math = "^0.0.1"
 joblib = "^1.3.2"
 dill = "^0.3.8"
 shap = "~=0.45.1"
-torch = {version = "^2.1.2", source = "pytorch_cpu"}
+torch = {version = "2.3.1", source = "pytorch_cpu"}
 
 [tool.poetry.group.arrow]
 optional = true
