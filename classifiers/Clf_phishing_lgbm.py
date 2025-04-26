@@ -92,6 +92,9 @@ class Clf_phishing_lgbm:
 
         # Remove html_ columns (current model does not support them) !
         input_data = input_data[[col for col in input_data.columns if not col.startswith('html_')]]
+
+        # Remove rep_ columns (current model does not support them) !
+        input_data = input_data[[col for col in input_data.columns if not col.startswith('rep_')]]
                 
         # Find the row corresponding to the domain name
         domain_row = input_data[input_data['domain_name'] == domain_name]
@@ -157,6 +160,9 @@ class Clf_phishing_lgbm:
 
         # Remove html_ columns (current model does not support them) !
         input_data = input_data[[col for col in input_data.columns if not col.startswith('html_')]]
+
+        # Remove rep_ columns (current model does not support them) !
+        input_data = input_data[[col for col in input_data.columns if not col.startswith('rep_')]]
 
         # Drop the 'domain_name' column if it exists
         if 'domain_name' in input_data.columns:

@@ -16,9 +16,11 @@ from .Clf_phishing_dns_nn import Clf_phishing_dns_nn
 from .Clf_phishing_rdap_nn import Clf_phishing_rdap_nn
 from .Clf_phishing_ip_nn import Clf_phishing_ip_nn
 from .Clf_phishing_html_lgbm import Clf_phishing_html_lgbm
+from .Clf_phishing_rep_lgbm import Clf_phishing_rep_lgbm
 from .Clf_malware_lgbm import Clf_malware_lgbm
 from .Clf_malware_xgboost import Clf_malware_xgboost
 from .Clf_malware_deepnn import Clf_malware_deepnn
+from .Clf_malware_rep_lgbm import Clf_malware_rep_lgbm
 
 from .Clf_dga_binary_nn import Clf_dga_binary_nn
 from .Clf_dga_binary_lgbm import Clf_dga_binary_lgbm
@@ -36,10 +38,12 @@ classifier_ids = {
     "Phishing RDAP-based NN": 6,
     "Phishing IP-based NN": 8,
     "Phishing HTML-based LightGBM": 19,
+    "Phishing Reputation system-based LightGBM": 24,
     "Malware LightGBM": 10,
     "Malware XGBoost": 11,
     "Malware Deep NN": 12,
     "Malware HTML-based LightGBM": 20,
+    "Malware Reputation system-based LightGBM": 25,
     "DGA Binary NN": 17,
     "DGA Binary LightGBM": 18,
     **{v: k + 100 for (k, v) in Clf_dga_multiclass_lgbm.inverse_class_map.items()}
@@ -64,11 +68,13 @@ class Pipeline:
         self.clf_phishing_rdap_nn = Clf_phishing_rdap_nn(options)
         self.clf_phishing_ip_nn = Clf_phishing_ip_nn(options)
         self.clf_phishing_html_lgbm = Clf_phishing_html_lgbm(options)
+        self.clf_phishing_rep_lgbm = Clf_phishing_rep_lgbm(options)
 
         self.clf_malware_html_lgbm = Clf_malware_html_lgbm(options)
         self.clf_malware_lgbm = Clf_malware_lgbm(options)
         self.clf_malware_xgboost = Clf_malware_xgboost(options)
         self.clf_malware_deepnn = Clf_malware_deepnn(options)
+        self.clf_malware_rep_lgbm = Clf_malware_rep_lgbm(options)
 
         self.clf_dga_binary_nn = Clf_dga_binary_nn(options)
         self.clf_dga_binary_lgbm = Clf_dga_binary_lgbm(options)
@@ -84,7 +90,7 @@ class Pipeline:
         How many features of each category are available and nonzero.
         """
         # Define the prefixes
-        prefixes = ["dns_", "tls_", "ip_", "rdap_", "geo_", "html_"]  # lex_ is always present
+        prefixes = ["dns_", "tls_", "ip_", "rdap_", "geo_", "html_", "rep_"]  # lex_ is always present
 
         # Initialize a DataFrame with domain names only
         stats = domain_data[["domain_name"]].copy()
@@ -220,7 +226,8 @@ class Pipeline:
                         classifier_ids["Phishing Deep NN"]: stats["phishing_deepnn_result"],
                         classifier_ids["Phishing DNS-based NN"]: stats["phishing_dns_nn_result"],
                         classifier_ids["Phishing RDAP-based NN"]: stats["phishing_rdap_nn_result"],
-                        classifier_ids["Phishing IP-based NN"]: stats["phishing_ip_nn_result"]
+                        classifier_ids["Phishing IP-based NN"]: stats["phishing_ip_nn_result"],
+                        classifier_ids["Phishing Reputation system-based LightGBM"]: stats["phishing_rep_lgbm_result"]
                     }
                 },
                 {
@@ -231,6 +238,7 @@ class Pipeline:
                         classifier_ids["Malware LightGBM"]: stats["malware_xgboost_result"],
                         classifier_ids["Malware XGBoost"]: stats["malware_xgboost_result"],
                         classifier_ids["Malware Deep NN"]: stats["malware_deepnn_result"],
+                        classifier_ids["Malware Reputation system-based LightGBM"]: stats["malware_rep_lgbm_result"]
                     }
                 },
                 {
@@ -382,12 +390,14 @@ class Pipeline:
         stats["phishing_rdap_nn_result"] = self.clf_phishing_rdap_nn.classify(df)
         stats["phishing_ip_nn_result"] = self.clf_phishing_ip_nn.classify(df)
         stats["phishing_html_lgbm_result"] = self.clf_phishing_html_lgbm.classify(df)
+        stats["phishing_rep_lgbm_result"] = self.clf_phishing_rep_lgbm.classify(df)
 
         # Malware
         stats["malware_lgbm_result"] = self.clf_malware_lgbm.classify(df)
         stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
         stats["malware_deepnn_result"] = self.clf_malware_deepnn.classify(df)
         stats["malware_html_lgbm_result"] = self.clf_malware_html_lgbm.classify(df)
+        stats["malware_rep_lgbm_result"] = self.clf_malware_rep_lgbm.classify(df)
 
         # DGA
         stats["dga_binary_deepnn_result"] = self.clf_dga_binary_nn.classify(df)

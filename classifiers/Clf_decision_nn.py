@@ -65,6 +65,16 @@ class Clf_decision_nn:
         if "label" in input_data.columns:
             input_data.drop(columns=["label"], inplace=True)
 
+        # Drop the rep system data if exists
+        if "rep_available" in input_data.columns:
+            input_data.drop(columns=["rep_available"], inplace=True)
+        if "rep_nonzero" in input_data.columns:
+            input_data.drop(columns=["rep_nonzero"], inplace=True)
+        if "phishing_rep_lgbm_result" in input_data.columns:
+            input_data.drop(columns=["phishing_rep_lgbm_result"], inplace=True)
+        if "malware_rep_lgbm_result" in input_data.columns:
+            input_data.drop(columns=["malware_rep_lgbm_result"], inplace=True)
+
         # Check whether the number of features is correct
         if input_data.shape[1] != self.expected_feature_size:
             raise ValueError(

@@ -63,6 +63,9 @@ class Clf_phishing_xgboost:
 
         # Remove html_ columns (current model does not support them) !
         input_data = input_data[[col for col in input_data.columns if not col.startswith('html_')]]
+
+        # Remove rep_ columns (current model does not support them) !
+        input_data = input_data[[col for col in input_data.columns if not col.startswith('rep_')]]
         
         # Drop the 'domain_name' column if it exists
         if 'domain_name' in input_data.columns:
