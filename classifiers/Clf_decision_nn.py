@@ -45,6 +45,7 @@ class Clf_decision_nn:
         if not isinstance(self.scaler, MinMaxScaler):
             raise ValueError("Loaded scaler is not a MinMaxScaler!")
 
+        # NOTE: (not needed - work fine, but only slows)
         # Load feature order from file
         feature_order_file = os.path.join(options.boundaries_dir, "decision_nn_feature_order.txt")
         with open(feature_order_file, "r") as f:
@@ -53,6 +54,7 @@ class Clf_decision_nn:
         # Get the number of features expected by the model
         # self.expected_feature_size = self.model.n_features_
         self.expected_feature_size = 33
+        #self.expected_feature_size = 21
 
     def cast_timestamp(self, df: DataFrame):
         """
@@ -75,17 +77,23 @@ class Clf_decision_nn:
         if "label" in input_data.columns:
             input_data.drop(columns=["label"], inplace=True)
 
+
+        # NEW: Drop all columns ending in _available or _nonzero
+        #cols_to_drop = [col for col in input_data.columns if col.endswith('_available') or col.endswith('_nonzero')]
+        #input_data.drop(columns=cols_to_drop, inplace=True)
+
         # Check whether the number of features is correct
         if input_data.shape[1] != self.expected_feature_size:
             raise ValueError(
                 f"The input data has {input_data.shape[1]} features, but the model expects {self.expected_feature_size} features.")
 
-    
+
+        # NOTE: (not needed - work fine, but only slows)
         # Verify and reorder features if needed
         if set(self.expected_features) != set(input_data.columns):
             raise ValueError("Mismatch between expected features and input features!")
     
-        input_data = input_data[self.expected_features]  # Reorder columns
+        #input_data = input_data[self.expected_features]  # Reorder columns
 
         # Cast timestamps
         input_data = self.cast_timestamp(input_data)

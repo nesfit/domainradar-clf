@@ -143,7 +143,7 @@ class Pipeline:
         #)[0]
 
 
-        # Heuristics
+        # Heuristics - original adjustments from FETA 24
         if not (
             domain_stats["phishing_avg"] > 0.75 and domain_stats["malware_avg"] > 0.75
         ):
@@ -163,8 +163,74 @@ class Pipeline:
         elif badness_probability > 1.0:
             badness_probability = 1.0
 
-        return badness_probability
+        # Failsafe heuristic A:
+        # If all bad categories are < 0.5, the total badness cannot be >= 0.5
+        if (
+            domain_stats["phishing_avg"] < 0.5
+            and domain_stats["malware_avg"] < 0.5
+            and domain_stats["dga_binary_avg"] < 0.5
+            and badness_probability > 0.5
+        ):
+            top_two = sorted([
+                domain_stats["phishing_avg"],
+                domain_stats["malware_avg"],
+                domain_stats["dga_binary_avg"]
+            ], reverse=True)[:2]
+            badness_probability = min(sum(top_two) / 2, 0.49)
 
+        # Failsafe heuristic B:
+        # If only one bad category is above 0.5, the total badness should be:
+        # - the value of this category at maximum
+        # - capped to 0.75 at maximum
+        thresholds = {
+            "phishing_avg": domain_stats["phishing_avg"],
+            "malware_avg": domain_stats["malware_avg"],
+            "dga_binary_avg": domain_stats["dga_binary_avg"]
+        }
+
+        # Identify which categories are > 0.5
+        high_categories = {k: v for k, v in thresholds.items() if v > 0.5}
+
+        if len(high_categories) == 1:
+            single_value = list(high_categories.values())[0]
+            # Cap to 0.75 and to the value of the single high category
+            badness_probability = min(badness_probability, 0.75, single_value)
+
+        # Failsafe heuristic C:
+        # If two categories are above 0.5, the badness probability cannot
+        # be higher than 15% from the maximum of these two categories.
+        elif len(high_categories) == 2:
+            max_category_value = max(high_categories.values())
+            cap = 1.15 * max_category_value
+            if badness_probability > cap:
+                badness_probability = cap
+
+        
+        # Additional adjustment:
+        # If only one category is > 0.5 AND the other two < 0.25
+        # THEN reduce badness by 10%, but if it was already >= 0.5, then not below 0.5
+        high = []
+        low = []
+
+        for name, value in {
+            "phishing_avg": domain_stats["phishing_avg"],
+            "malware_avg": domain_stats["malware_avg"],
+            "dga_binary_avg": domain_stats["dga_binary_avg"]
+        }.items():
+            if value > 0.5:
+                high.append(name)
+            elif value < 0.25:
+                low.append(name)
+
+        # Apply heuristic only if exactly one high and two low
+        if len(high) == 1 and len(low) == 2:
+            reduced = badness_probability * 0.9
+            if badness_probability >= 0.5:
+                badness_probability = max(reduced, 0.5)
+            else:
+                badness_probability = reduced
+
+        return badness_probability
 
     def generate_result(self, stats: pd.Series) -> dict:
         """
