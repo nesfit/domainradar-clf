@@ -158,6 +158,7 @@ class Pipeline:
         ):
             badness_probability -= 0.1
 
+        # Correct to 0..1 (if needed)
         if badness_probability < 0.0:
             badness_probability = 0.0
         elif badness_probability > 1.0:
@@ -229,6 +230,35 @@ class Pipeline:
                 badness_probability = max(reduced, 0.5)
             else:
                 badness_probability = reduced
+
+        # Failsafe heuristic X:
+        # The overall badness cannot be more than 20% higher than the highest category
+        max_category = max(
+            domain_stats["phishing_avg"],
+            domain_stats["malware_avg"],
+            domain_stats["dga_binary_avg"]
+        )
+        cap = 1.20 * max_category
+        if badness_probability > cap:
+            badness_probability = cap
+
+        # Failsafe heuristic Y:
+        # The overall badness cannot exceed the sum of all categories
+        category_sum = (
+            domain_stats["phishing_avg"]
+            + domain_stats["malware_avg"]
+            + domain_stats["dga_binary_avg"]
+        )
+        if badness_probability > category_sum:
+            badness_probability = category_sum
+
+        # Failsafe Z: probability shall be 0..1
+        # (Just for a case the NN goes wild for some reason)
+
+        if badness_probability < 0.0:
+            badness_probability = 0.0
+        elif badness_probability > 1.0:
+            badness_probability = 1.0
 
         return badness_probability
 
