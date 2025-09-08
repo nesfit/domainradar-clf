@@ -44,6 +44,7 @@ scipy = "^1.12.0"
 
 
 [[tool.poetry.source]]
+priority = "explicit"
 name = "pytorch_cpu"
 url = "https://download.pytorch.org/whl/cpu"
 
