@@ -1,5 +1,12 @@
 # ML Classification Pipeline for DomainRadar
 
+## Requirements
+- Python 3.11
+- poetry 1.8 (Please install using pipx)
+
+Note: If you have a newer default Python version, make sure this venv uses 3.11, e.g.:
+`poetry env use /usr/local/bin/python3.11`
+
 ## Usage
 
 Modify the **pyproject.toml** file in your Python Poetry project - extend the `[tool.poetry.dependencies]` section with:
