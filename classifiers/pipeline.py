@@ -476,6 +476,8 @@ class Pipeline:
             Returns:
                 Updated DataFrame with results
         """
+        # Rearrange the feature vector to the order in which it was used in training
+        df = df.reindex(columns=features_in_expected_order, copy=False)
 
         # Get individual classifiers' results
         # Phishing
@@ -605,7 +607,8 @@ class Pipeline:
         """
 
         # Rearrange the feature vector to the order in which it was used in training
-        df = df.reindex(columns=features_in_expected_order, copy=False)
+        #df = df.reindex(columns=features_in_expected_order, copy=False)
+        # ^^^ Moved to run_classifiers()
 
         # Calculate the feature statistics
         stats = self.feature_statistics(df)
