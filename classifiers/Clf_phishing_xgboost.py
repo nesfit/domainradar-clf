@@ -38,6 +38,18 @@ class Clf_phishing_xgboost:
         # Columns that are not used in the model
         self.disqualified_columns = ["tls_joint_isoitu_policy_crt_count", "rdap_time_from_last_change", "lex_www_flag"]
 
+        self.disqualified_columns += [
+            # "rdap_domain_age",
+            "lex_tld_abuse_score",
+            # "rdap_registrar_name_len",
+            "tls_leaf_cert_validity_len",
+            "rdap_domain_active_time",
+            "tls_root_authority_hash",
+            "lex_tld_len",
+            # "rdap_registrar_name_entropy",
+            "tls_critical_extensions",
+            "tls_percentage_crt_with_policies",
+        ]
 
     def cast_timestamp(self, df: DataFrame):
         """
