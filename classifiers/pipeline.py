@@ -27,6 +27,8 @@ from .Clf_decision_nn import Clf_decision_nn
 #from .Clf_decision_lgbm import Clf_decision_lgbm
 from .Clf_malware_html_lgbm import Clf_malware_html_lgbm
 
+from .Clf_malware_tfidf_lgbm import Clf_malware_tfidf_lgbm
+from .Clf_phishing_tfidf_lgbm import Clf_phishing_tfidf_lgbm
 
 classifier_ids = {
 #    "Phishing CNN": 1,
@@ -41,6 +43,8 @@ classifier_ids = {
 #    "Malware XGBoost": 11,
 #    "Malware Deep NN": 12,
     "Malware HTML-based LightGBM": 20,
+    "Malware TF-IDF-based LightGBM": 22,
+    "Phishing TF-IDF-based LightGBM": 23,
     "DGA Binary NN": 17,
     "DGA Binary LightGBM": 18,
     **{v: k + 100 for (k, v) in Clf_dga_multiclass_lgbm.inverse_class_map.items()}
@@ -70,6 +74,8 @@ class Pipeline:
         self.clf_malware_lgbm = Clf_malware_lgbm(options)
         #self.clf_malware_xgboost = Clf_malware_xgboost(options)
         #self.clf_malware_deepnn = Clf_malware_deepnn(options)
+        self.clf_malware_tfidf_lgbm = Clf_malware_tfidf_lgbm(options)
+        self.clf_phishing_tfidf_lgbm = Clf_phishing_tfidf_lgbm(options)
 
         self.clf_dga_binary_nn = Clf_dga_binary_nn(options)
         self.clf_dga_binary_lgbm = Clf_dga_binary_lgbm(options)
@@ -86,7 +92,7 @@ class Pipeline:
         How many features of each category are available and nonzero.
         """
         # Define the prefixes
-        prefixes = ["dns_", "tls_", "ip_", "rdap_", "geo_", "html_"]  # lex_ is always present
+        prefixes = ["dns_", "tls_", "ip_", "rdap_", "geo_", "html_", "tfidf_malware_", "tfidf_phishing_"]  # lex_ is always present
 
         # Initialize a DataFrame with domain names only
         stats = domain_data[["domain_name"]].copy()
@@ -357,12 +363,25 @@ class Pipeline:
         if stats["phishing_html_lgbm_result"] != -1:
             result["classification_results"][0]["details"][classifier_ids["Phishing HTML-based LightGBM"]] = stats["phishing_html_lgbm_result"]
         else:
+            stats["phishing_tfidf_lgbm_result"] = -1
             result["classification_results"][0]["description"] += "\n" + "No HTML code scraped -> HTML-based classifiers disabled."
         
         if stats["malware_html_lgbm_result"] != -1:
             result["classification_results"][1]["details"][classifier_ids["Malware HTML-based LightGBM"]] = stats["malware_html_lgbm_result"]
         else:
+            stats["malware_tfidf_lgbm_result"] = -1
             result["classification_results"][1]["description"] += "\n" + "No HTML code scraped -> HTML-based classifiers disabled."
+            
+            
+        if stats["malware_tfidf_lgbm_result"] != -1:
+            result["classification_results"][1]["details"][classifier_ids["Malware TF-IDF-based LightGBM"]] = stats["malware_tfidf_lgbm_result"]
+        else:
+            result["classification_results"][1]["description"] += "\n" + "No HTML code scraped -> TFIDF-based classifiers disabled."
+        
+        if stats["phishing_tfidf_lgbm_result"] != -1:
+            result["classification_results"][0]["details"][classifier_ids["Phishing TF-IDF-based LightGBM"]] = stats["phishing_tfidf_lgbm_result"]
+        else:
+            result["classification_results"][0]["description"] += "\n" + "No HTML code scraped -> TFIDF-based classifiers disabled."
 
         return result
 
@@ -489,12 +508,14 @@ class Pipeline:
         stats["phishing_rdap_nn_result"] = self.clf_phishing_rdap_nn.classify(df)
         #stats["phishing_ip_nn_result"] = self.clf_phishing_ip_nn.classify(df)
         stats["phishing_html_lgbm_result"] = self.clf_phishing_html_lgbm.classify(df)
+        stats["phishing_tfidf_lgbm_result"] = self.clf_malware_tfidf_lgbm.classify(df)
 
         # Malware
         stats["malware_lgbm_result"] = self.clf_malware_lgbm.classify(df)
         #stats["malware_xgboost_result"] = self.clf_malware_xgboost.classify(df)
         #stats["malware_deepnn_result"] = self.clf_malware_deepnn.classify(df)
         stats["malware_html_lgbm_result"] = self.clf_malware_html_lgbm.classify(df)
+        stats["malware_tfidf_lgbm_result"] = self.clf_malware_tfidf_lgbm.classify(df)
 
         # DGA
         stats["dga_binary_deepnn_result"] = self.clf_dga_binary_nn.classify(df)

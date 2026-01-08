@@ -73,5 +73,18 @@ features_in_expected_order = ['domain_name', 'dns_has_dnskey', 'dns_A_count', 'd
                                 'html_num_of_links_href_css', 'html_num_of_links_type', 'html_num_of_link_type_app', 'html_num_of_link_rel', 'html_num_of_all_hrefs', 'html_num_of_form_action', 'html_num_of_form_http', 
                                 'html_num_of_strong', 'html_no_hrefs', 'html_internal_href_ratio', 'html_num_of_internal_hrefs', 'html_external_href_ratio', 'html_num_of_external_href', 'html_num_of_icon', 
                                 'html_icon_external', 'html_num_of_form_php', 'html_num_of_form_hash', 'html_num_of_form_js', 'html_malicious_form', 'html_most_common', 'html_num_of_css_internal', 
-                                'html_num_of_css_external', 'html_num_of_anchors_to_content', 'html_num_of_anchors_to_void', 'html_num_of_blank_spaces', 'html_blocked_keywords_label'
+                                'html_num_of_css_external', 'html_num_of_anchors_to_content', 'html_num_of_anchors_to_void', 'html_num_of_blank_spaces', 'html_blocked_keywords_label',
+                                
+                                'tfidf_phishing_posts', 'tfidf_phishing_profile', 'tfidf_phishing_visit', 'tfidf_phishing_skip', 'tfidf_phishing_report', 'tfidf_phishing_blog', 'tfidf_phishing_content', 'tfidf_phishing_search', 'tfidf_phishing_powered',
+                                'tfidf_phishing_well', 'tfidf_phishing_use', 'tfidf_phishing_link', 'tfidf_phishing_business', 'tfidf_phishing_email', 'tfidf_phishing_everything', 'tfidf_phishing_home',
+                                'tfidf_phishing_page', 'tfidf_phishing_create', 'tfidf_phishing_website', 'tfidf_phishing_services', 'tfidf_phishing_free', 'tfidf_phishing_data', 'tfidf_phishing_facebook', 'tfidf_phishing_account',
+                                'tfidf_phishing_designed', 'tfidf_phishing_things', 'tfidf_phishing_outdated', 'tfidf_phishing_insecure', 'tfidf_phishing_service',
+                                'tfidf_phishing_learn', 'tfidf_phishing_information', 'tfidf_phishing_management', 'tfidf_phishing_time', 'tfidf_phishing_health', 'tfidf_phishing_events', 'tfidf_phishing_view',
+                                'tfidf_phishing_best', 'tfidf_phishing_find', 'tfidf_phishing_online', 'tfidf_phishing_read', 'tfidf_phishing_standard', 'tfidf_phishing_school',
+
+                                'tfidf_malware_help', 'tfidf_malware_make', 'tfidf_malware_time', 'tfidf_malware_view', 'tfidf_malware_home', 'tfidf_malware_products', 'tfidf_malware_use', 'tfidf_malware_experience',
+                                'tfidf_malware_information', 'tfidf_malware_read', 'tfidf_malware_email', 'tfidf_malware_services', 'tfidf_malware_education', 'tfidf_malware_learn', 'tfidf_malware_best', 'tfidf_malware_free',
+                                'tfidf_malware_business', 'tfidf_malware_service', 'tfidf_malware_price', 'tfidf_malware_website', 'tfidf_malware_data', 'tfidf_malware_bitcoin', 'tfidf_malware_investment', 'tfidf_malware_platform',
+                                'tfidf_malware_financial', 'tfidf_malware_trading', 'tfidf_malware_market', 'tfidf_malware_immediate', 'tfidf_malware_support', 'tfidf_malware_management',
+                                'tfidf_malware_health', 'tfidf_malware_events', 'tfidf_malware_find', 'tfidf_malware_online', 'tfidf_malware_standard', 'tfidf_malware_search', 'tfidf_malware_school'
                               ]
